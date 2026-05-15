@@ -1,0 +1,4 @@
+To compile code and move all .class to out folder
+``` find src -name "*.java" | xargs javac -cp "lib/*" -d out```
+To running main: 
+```java -cp "out:lib/*" hotel.main.Main```

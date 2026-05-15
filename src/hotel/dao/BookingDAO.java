@@ -115,6 +115,21 @@ public class BookingDAO implements IDao<Booking> {
 		return bookings;
 	}
 
+	public List<Booking> getByRoomId(int roomId) throws SQLException {
+		String sql = "SELECT * FROM bookings WHERE room_id = ? ORDER BY id";
+		List<Booking> bookings = new ArrayList<>();
+		try (Connection conn = DBConnection.getConnection();
+			 PreparedStatement stmt = conn.prepareStatement(sql)) {
+			stmt.setInt(1, roomId);
+			try (ResultSet rs = stmt.executeQuery()) {
+				while (rs.next()) {
+					bookings.add(mapBooking(rs));
+				}
+			}
+		}
+		return bookings;
+	}
+
 	private Booking mapBooking(ResultSet rs) throws SQLException {
 		return new Booking(
 				rs.getInt("id"),
