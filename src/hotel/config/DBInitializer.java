@@ -9,12 +9,11 @@ import java.util.regex.Pattern;
 public class DBInitializer {
 
     private static final Pattern CREATE_TABLE_PATTERN = Pattern.compile(
-            "(?i)^CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?([a-zA-Z_][a-zA-Z0-9_]*)"
-    );
+            "(?i)^CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?([a-zA-Z_][a-zA-Z0-9_]*)");
 
     public static void initialize() {
         try (Connection conn = DBConnection.getConnection();
-             Statement stmt = conn.createStatement()) {
+                Statement stmt = conn.createStatement()) {
             String sql = new String(Files.readAllBytes(Paths.get("database/schema.sql")));
             String[] statements = sql.split(";");
 
@@ -39,7 +38,7 @@ public class DBInitializer {
     public static boolean tableExists(String tableName) {
         String sql = "SELECT 1 FROM sqlite_master WHERE type='table' AND lower(name)=lower(?) LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, tableName);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next();
@@ -60,5 +59,5 @@ public class DBInitializer {
         }
         return null;
     }
-    
+
 }
