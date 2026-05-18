@@ -310,9 +310,9 @@ public class LoginFrame {
         imagePanel.setLayout(null);
 
         String[] imagePaths = {
-                "src/resources/hotel1.jpg",
-                "src/resources/hotel2.jpg",
-                "src/resources/hotel3.jpg"
+                "src/hotel/images/resources/hotel1.jpg",
+                "src/hotel/images/resources/hotel2.jpg",
+                "src/hotel/images/resources/hotel3.jpg"
         };
 
         imagePanel.setBounds(460, 0, 520, 760);
