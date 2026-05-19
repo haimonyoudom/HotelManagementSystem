@@ -1,11 +1,19 @@
-package hotel.ui.common;
+package hotel.test;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import hotel.service.AuthService;
+import hotel.service.BookingService;
+import hotel.config.DBConnection;
+import hotel.dao.UserDAO;
+import hotel.model.User;
+import hotel.util.PasswordHasher;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
-public class LoginFrame {
+class LoginFrame {
 
     static JPanel loginPanel;
     static JPanel signupPanel;
@@ -174,8 +182,26 @@ public class LoginFrame {
                     loginStatus.setText("Password must be at least 8 characters.");
                     return;
                 }
-                loginStatus.setForeground(new Color(15, 84, 175));
-                loginStatus.setText("Signed in successfully (demo mode). Welcome back!");
+
+                // Connect to database and validate credentials
+                try {
+                    DBConnection.getConnection();
+                    AuthService authService = new AuthService();
+
+                    if (authService.login(username, password)) {
+                        loginStatus.setForeground(new Color(34, 139, 34));
+                        loginStatus.setText("Login successful! Welcome back!");
+                        usernameField.setText("");
+                        passwordField.setText("");
+                    } else {
+                        loginStatus.setForeground(new Color(170, 34, 62));
+                        loginStatus.setText("Invalid username or password.");
+                    }
+                } catch (Exception ex) {
+                    loginStatus.setForeground(new Color(170, 34, 62));
+                    loginStatus.setText("Database error: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
             }
         });
 
@@ -382,16 +408,46 @@ public class LoginFrame {
                     signupStatus.setText("Passwords do not match.");
                     return;
                 }
-                signupStatus.setForeground(new Color(15, 84, 175));
-                signupStatus.setText("Account created successfully. You can sign in now.");
 
-                // Clear fields
-                nameField.setText("");
-                emailField.setText("");
-                phoneField.setText("");
-                addressField.setText("");
-                passwordField.setText("");
-                confirmField.setText("");
+                // Save new user to database
+                try {
+                    DBConnection.getConnection();
+                    UserDAO userDAO = new UserDAO();
+
+                    // Hash the password
+                    String passwordHash = PasswordHasher.hash(password);
+
+                    // Create new user object (using email as username for this signup form)
+                    User newUser = new User();
+                    newUser.setUsername(email);
+                    newUser.setPasswordHash(passwordHash);
+                    newUser.setRole("customer");
+                    newUser.setCreatedAt(
+                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    newUser.setName(name);
+                    newUser.setEmail(email);
+                    newUser.setPhone(phone);
+                    newUser.setAddress(address);
+
+                    // Add user to database
+                    userDAO.add(newUser);
+
+                    signupStatus.setForeground(new Color(34, 139, 34));
+                    signupStatus.setText("Account created successfully. You can sign in now.");
+
+                    // Clear fields
+                    nameField.setText("");
+                    emailField.setText("");
+                    phoneField.setText("");
+                    addressField.setText("");
+                    passwordField.setText("");
+                    confirmField.setText("");
+
+                } catch (Exception ex) {
+                    signupStatus.setForeground(new Color(170, 34, 62));
+                    signupStatus.setText("Error creating account: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
             }
         });
 
