@@ -10,9 +10,9 @@ public class AdminDashboard {
     // ── Declare all panels here so buttons can access them ──
     static JPanel sidebarPanel;
     static ManageRoomsPanel roomsPanel;
-    static ManageCustomersPanel customersPanel;
-    static ManageStaffPanel staffPanel;
-    static IncomeReportPanel incomePanel;
+    // static ManageCustomersPanel customersPanel;
+    // static ManageStaffPanel staffPanel;
+    // static IncomeReportPanel incomePanel;
     static JPanel currentContentPanel;
 
     // ── Colors matching your dark theme screenshot ──
@@ -49,27 +49,27 @@ public class AdminDashboard {
         roomsPanel = new ManageRoomsPanel();
         roomsPanel.setBounds(CONTENT_X, 0, CONTENT_WIDTH, FRAME_HEIGHT);
 
-        customersPanel = new ManageCustomersPanel();
-        customersPanel.setBounds(CONTENT_X, 0, CONTENT_WIDTH, FRAME_HEIGHT);
+        // customersPanel = new ManageCustomersPanel();
+        // customersPanel.setBounds(CONTENT_X, 0, CONTENT_WIDTH, FRAME_HEIGHT);
 
-        staffPanel = new ManageStaffPanel();
-        staffPanel.setBounds(CONTENT_X, 0, CONTENT_WIDTH, FRAME_HEIGHT);
+        // staffPanel = new ManageStaffPanel();
+        // staffPanel.setBounds(CONTENT_X, 0, CONTENT_WIDTH, FRAME_HEIGHT);
 
-        incomePanel = new IncomeReportPanel();
-        incomePanel.setBounds(CONTENT_X, 0, CONTENT_WIDTH, FRAME_HEIGHT);
+        // incomePanel = new IncomeReportPanel();
+        // incomePanel.setBounds(CONTENT_X, 0, CONTENT_WIDTH, FRAME_HEIGHT);
 
         // ── Add all content panels to frame ───────────────────────────
         frame.add(roomsPanel);
-        frame.add(customersPanel);
-        frame.add(staffPanel);
-        frame.add(incomePanel);
+        // frame.add(customersPanel);
+        // frame.add(staffPanel);
+        // frame.add(incomePanel);
 
         // ── Show only Rooms screen at the start ─────────────────────
         roomsPanel.setVisible(true);
-        customersPanel.setVisible(false);
-        staffPanel.setVisible(false);
-        incomePanel.setVisible(false);
-        currentContentPanel = roomsPanel;
+        // customersPanel.setVisible(false);
+        // staffPanel.setVisible(false);
+        // incomePanel.setVisible(false);
+        // currentContentPanel = roomsPanel;
 
         frame.setVisible(true);
     }
@@ -208,9 +208,9 @@ public class AdminDashboard {
     static JPanel getPanelForItem(String item) {
         switch(item) {
             case "Rooms": return roomsPanel;
-            case "Customers": return customersPanel;
-            case "Staff": return staffPanel;
-            case "Reports": return incomePanel;
+            // case "Customers": return customersPanel;
+            // case "Staff": return staffPanel;
+            // case "Reports": return incomePanel;
             default: return roomsPanel;
         }
     }
