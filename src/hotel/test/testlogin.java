@@ -8,66 +8,35 @@ import hotel.service.AuthService;
 import hotel.service.BookingService;
 import hotel.config.DBConnection;
 import hotel.dao.UserDAO;
+import hotel.dao.CustomerDAO;
 import hotel.model.User;
+import hotel.model.Customer;
 import hotel.util.PasswordHasher;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.sql.SQLException;
 
 class LoginFrame {
 
-    static JPanel loginPanel;
-    static JPanel signupPanel;
-    static JLabel loginStatus;
-    static JLabel signupStatus;
-    static double scaleX = 1.0;
-    static double scaleY = 1.0;
-    static int screenWidth = 980;
-    static int screenHeight = 760;
+    // ── Existing scaling fields ──────────────────────────────────────
+    public static JPanel loginPanel;
+    public static JPanel signupPanel;
+    public static JLabel loginStatus;
+    public static JLabel signupStatus;
+    public static double scaleX = 1.0;
+    public static double scaleY = 1.0;
+    public static int screenWidth = 980;
+    public static int screenHeight = 760;
+    public static int leftPanelWidth;
 
-    // Left panel width = 46% of screen; form content lives within it
-    static int leftPanelWidth;
+    // ── Frame dimensions ──────
+    static final int FRAME_WIDTH = 1400;
+    static final int FRAME_HEIGHT = 900;
+    static final int SIDEBAR_WIDTH = 220;
+    static final int CONTENT_X = SIDEBAR_WIDTH;
+    static final int CONTENT_WIDTH = FRAME_WIDTH - SIDEBAR_WIDTH;
 
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Hotel Management System");
-        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        frame.setLayout(null);
-        frame.setResizable(true);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        screenWidth = screenSize.width;
-        screenHeight = screenSize.height;
-        scaleX = screenWidth / 980.0;
-        scaleY = screenHeight / 760.0;
-
-        // Left panel occupies 46% of the screen width
-        leftPanelWidth = (int) (screenWidth * 0.46);
-
-        loginPanel = new JPanel();
-        signupPanel = new JPanel();
-
-        loginPanel.setLayout(null);
-        loginPanel.setBounds(0, 0, screenWidth, screenHeight);
-        loginPanel.setBackground(Color.WHITE);
-
-        signupPanel.setLayout(null);
-        signupPanel.setBounds(0, 0, screenWidth, screenHeight);
-        signupPanel.setBackground(Color.WHITE);
-
-        frame.add(loginPanel);
-        frame.add(signupPanel);
-
-        buildLoginScreen();
-        buildSignupScreen();
-
-        loginPanel.setVisible(true);
-        signupPanel.setVisible(false);
-
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-    }
-
-    private static void buildLoginScreen() {
+    public static void buildLoginScreen() {
         int cardW = sx(420); // ← card width, adjust to taste
         int cardH = sy(480); // ← card height
         int cardX = sx(40); // ← distance from left edge
@@ -216,7 +185,7 @@ class LoginFrame {
         buildIllustrationPanel(loginPanel);
     }
 
-    private static void buildSignupScreen() {
+    public static void buildSignupScreen() {
         int cardW = sx(420);
         int cardH = sy(650); // Adjusted height for compact fields
         int cardX = sx(40);
@@ -419,11 +388,19 @@ class LoginFrame {
 
                     // Create new user object (using email as username for this signup form)
                     User newUser = new User();
-                    newUser.setUsername(email);
+                    newUser.setUsername(name);
                     newUser.setPasswordHash(passwordHash);
                     newUser.setRole("customer");
                     newUser.setCreatedAt(
                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+                    CustomerDAO customerDAO = new CustomerDAO();
+                    Customer newCustomer = new Customer();
+                    newCustomer.setName(name);
+                    newCustomer.setEmail(email);
+                    newCustomer.setPhone(phone);
+                    newCustomer.setAddress(address);
+                    customerDAO.add(newCustomer);
                     newUser.setName(name);
                     newUser.setEmail(email);
                     newUser.setPhone(phone);
@@ -445,7 +422,11 @@ class LoginFrame {
 
                 } catch (Exception ex) {
                     signupStatus.setForeground(new Color(170, 34, 62));
-                    signupStatus.setText("Error creating account: " + ex.getMessage());
+                    if (ex.getMessage() != null && ex.getMessage().contains("UNIQUE")) {
+                        signupStatus.setText("Email already exists. Please use a different email.");
+                    } else {
+                        signupStatus.setText("Error creating account: " + ex.getMessage());
+                    }
                     ex.printStackTrace();
                 }
             }
