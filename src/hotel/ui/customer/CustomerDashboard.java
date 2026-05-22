@@ -5,283 +5,312 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import javax.swing.*;
 
+// CustomerDashboard: main shell for customer-facing UI.
+// - Declares all panels at the top (leader's format)
+// - Calls each panel class to build its screen (admin pattern)
+// - Exposes switchTo() and shared helper methods for all child panels
+
 public class CustomerDashboard {
 
     // ── Declare ALL panels here (leader's format) ──────────────────────
-    static JPanel dashboardPanel;
-    static BrowseRoomsPanel roomsPanel;
-    static JPanel bookingPanel;
-    static JPanel paymentPanel;
-    static JPanel historyPanel;
+    public static JPanel dashboardPanel;
+    public static BrowseRoomsPanel roomsPanel;       // separate file
+    public static JPanel bookingPanel;
+    public static JPanel paymentPanel;
+    public static JPanel historyPanel;
 
-    // ── Colors ─────────────────────────────────────────────────────────
-    static final Color BG_MAIN      = new Color(0x0D0D1A);
-    static final Color BG_SIDEBAR   = new Color(0x111122);
-    static final Color BG_TOPBAR    = new Color(0x0A0A16);
-    static final Color BG_CARD      = new Color(0x16162A);
-    static final Color BG_ELEVATED  = new Color(0x1C1C35);
-    static final Color BG_CONTENT   = new Color(0x0F0F20);
+    // ── Palette ────────────────────────────────────────────────────────
+static final Color BG_MAIN       = new Color(18, 18, 18);   // BG_DARK — app root
+static final Color BG_SIDEBAR    = new Color(13, 13, 30);   // dark navy sidebar
+static final Color BG_TOPBAR     = new Color(18, 18, 18);   // BG_DARK — topbar
+static final Color BG_CARD       = new Color(20, 20, 40);   // dark navy card
+static final Color BG_ELEVATED   = new Color(22, 22, 50);   // welcome banner
+static final Color BG_CONTENT    = new Color(18, 18, 18);   // BG_DARK — content area
+static final Color BG_ROW        = new Color(28, 28, 50);   // booking row bg
 
-    static final Color BLUE         = new Color(0x3B82F6);
-    static final Color BLUE_DIM     = new Color(0x1E3A6E);
-    static final Color ORANGE       = new Color(0xF97316);
-    static final Color ORANGE_DIM   = new Color(0x7C2D12);
-    static final Color PURPLE       = new Color(0xA78BFA);
-    static final Color PURPLE_DIM   = new Color(0x2D1F6E);
-    static final Color TEAL         = new Color(0x34D399);
-    static final Color TEAL_DIM     = new Color(0x064E3B);
+static final Color BLUE          = new Color(59, 130, 246);  // stat card 1 — blue
+static final Color BLUE_DIM      = new Color(15, 30, 70);    // stat card 1 bg
+static final Color ORANGE        = new Color(249, 115, 22);  // stat card 2 — orange
+static final Color ORANGE_DIM    = new Color(60, 25, 8);     // stat card 2 bg
+static final Color PURPLE        = new Color(167, 139, 250); // stat card 3 — purple
+static final Color PURPLE_DIM    = new Color(35, 20, 80);    // stat card 3 bg
+static final Color TEAL          = new Color(52, 211, 153);  // stat card 4 — teal
+static final Color TEAL_DIM      = new Color(6, 40, 30);     // stat card 4 bg
 
-    static final Color NAV_ACTIVE_BG   = new Color(0x7C2D12);
-    static final Color NAV_ACTIVE_TEXT = new Color(0xFED7AA);
-    static final Color NAV_HOVER_BG    = new Color(0x1E1E3A);
+static final Color NAV_ACTIVE_BG   = new Color(30, 40, 100); // blue active nav
+static final Color NAV_ACTIVE_TEXT = new Color(147, 197, 253);// light blue text
+static final Color NAV_HOVER_BG    = new Color(40, 40, 40);  // BG_HOVER
 
-    static final Color TXT_PRIMARY   = new Color(0xE8E6FF);
-    static final Color TXT_SECONDARY = new Color(0x8884CC);
-    static final Color TXT_MUTED     = new Color(0x4A4870);
-    static final Color BORDER        = new Color(0x1E1E3F);
-    static final Color BORDER_BLUE   = new Color(0x2563EB);
+static final Color TXT_PRIMARY   = new Color(240, 240, 240); // TEXT_WHITE
+static final Color TXT_SECONDARY = new Color(150, 150, 150); // TEXT_GRAY
+static final Color TXT_MUTED     = new Color(80, 80, 80);    // muted
+static final Color BORDER        = new Color(50, 50, 50);    // BORDER_COLOR
+static final Color BORDER_BLUE   = new Color(37, 99, 235);   // blue content border
 
-    static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("MMM d, yyyy");
+    public static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("MMM d, yyyy");
 
-    // ── Fonts ───────────────────────────────────────────────────────────
-    static final Font F_LARGE  = new Font("Segoe UI", Font.BOLD,  20);
-    static final Font F_TITLE  = new Font("Segoe UI", Font.BOLD,  16);
-    static final Font F_MED    = new Font("Segoe UI", Font.BOLD,  13);
-    static final Font F_REG    = new Font("Segoe UI", Font.PLAIN, 13);
-    static final Font F_SMALL  = new Font("Segoe UI", Font.PLAIN, 11);
-    static final Font F_TINY   = new Font("Segoe UI", Font.PLAIN, 10);
+    // ── Fonts ──────────────────────────────────────────────────────────
+    public static final Font F_LARGE = new Font("Segoe UI", Font.BOLD,  22);
+    public static final Font F_TITLE = new Font("Segoe UI", Font.BOLD,  16);
+    public static final Font F_MED   = new Font("Segoe UI", Font.BOLD,  13);
+    public static final Font F_REG   = new Font("Segoe UI", Font.PLAIN, 13);
+    public static final Font F_SMALL = new Font("Segoe UI", Font.PLAIN, 11);
+    public static final Font F_TINY  = new Font("Segoe UI", Font.PLAIN, 10);
 
-    // ── Layout constants ────────────────────────────────────────────────
-    static final Dimension SCREEN = Toolkit.getDefaultToolkit().getScreenSize();
-    static final int W          = SCREEN.width;
-    static final int H          = SCREEN.height;
-    static final int SIDEBAR_W  = 170;
-    static final int TOPBAR_H   = 52;
-    static final int CONTENT_X  = SIDEBAR_W;
-    static final int CONTENT_Y  = TOPBAR_H;
-    static final int CONTENT_W  = W - SIDEBAR_W - 2;
-    static final int CONTENT_H  = H - TOPBAR_H - 2;
+    // ── Layout ─────────────────────────────────────────────────────────
+    public static final Dimension SCREEN    = Toolkit.getDefaultToolkit().getScreenSize();
+    public static final int W               = SCREEN.width;
+    public static final int H               = SCREEN.height;
+    public static final int SIDEBAR_W       = 180;
+    public static final int TOPBAR_H        = 56;
+    public static final int CONTENT_X       = SIDEBAR_W;
+    public static final int CONTENT_Y       = TOPBAR_H;
+    public static final int CONTENT_W       = W - SIDEBAR_W;
+    public static final int CONTENT_H       = H - TOPBAR_H;
 
-    // ==========================================================================
+    // =========================================================================
     public static void main(String[] args) {
         try { UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); }
         catch (Exception ignored) {}
 
         SwingUtilities.invokeLater(() -> {
 
-            // ── Create the Window ──────────────────────────────────────────
+            // ── Create the Window ──────────────────────────────────────
             JFrame frame = new JFrame("HMS - Hotel Management System");
             frame.setSize(W, H);
             frame.setLayout(null);
-            frame.setResizable(true);
             frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.getContentPane().setBackground(BG_MAIN);
 
-            // ── Create panels (one per screen) ─────────────────────────────
+            // ── Create Content Panels (one per screen) ─────────────────
             dashboardPanel = new JPanel(null);
-            roomsPanel     = new BrowseRoomsPanel();
+            roomsPanel     = new BrowseRoomsPanel();   // separate file
             bookingPanel   = new JPanel(null);
             paymentPanel   = new JPanel(null);
             historyPanel   = new JPanel(null);
 
-            dashboardPanel.setBounds(0, 0, W, H);
-            dashboardPanel.setBackground(BG_MAIN);
-
+            // ── Size all plain panels ──────────────────────────────────
+            for (JPanel p : new JPanel[]{dashboardPanel, bookingPanel, paymentPanel, historyPanel}) {
+                p.setBounds(0, 0, W, H);
+                p.setBackground(BG_MAIN);
+                p.setOpaque(true);
+            }
             roomsPanel.setBounds(0, 0, W, H);
-            roomsPanel.setBackground(BG_MAIN);
 
-            bookingPanel.setBounds(0, 0, W, H);
-            bookingPanel.setBackground(BG_MAIN);
-
-            paymentPanel.setBounds(0, 0, W, H);
-            paymentPanel.setBackground(BG_MAIN);
-
-            historyPanel.setBounds(0, 0, W, H);
-            historyPanel.setBackground(BG_MAIN);
-
-            // ── Add all panels to the frame ────────────────────────────────
+            // ── Add all panels to the frame ────────────────────────────
             frame.add(dashboardPanel);
             frame.add(roomsPanel);
             frame.add(bookingPanel);
             frame.add(paymentPanel);
             frame.add(historyPanel);
 
-            // ── Build content for each screen ──────────────────────────────
-            buildDashboardScreen();
-            buildBookingPanel();
-            buildPaymentPanel();
-            buildHistoryPanel();
+            // ── Call each panel class to build its screen ──────────────
+            buildDashboardScreen();   // built right here below
+            // BrowseRoomsPanel builds itself inside its constructor
+            buildBookingPanel();      // placeholder
+            buildPaymentPanel();      // placeholder
+            buildHistoryPanel();      // placeholder
 
-            // ── Show only Dashboard at start ───────────────────────────────
-            dashboardPanel.setVisible(true);
-            roomsPanel.setVisible(false);
-            bookingPanel.setVisible(false);
-            paymentPanel.setVisible(false);
-            historyPanel.setVisible(false);
+            // ── Show only Dashboard at the start ───────────────────────
+            switchTo("dashboard");
 
             frame.setVisible(true);
         });
     }
 
-    // ==========================================================================
+    // =========================================================================
     // SCREEN 1 — DASHBOARD
-    // ==========================================================================
-    static void buildDashboardScreen() {
-
-        // TOPBAR
-        addTopbar(dashboardPanel, "Dashboard", "Welcome back username");
-
-        // SIDEBAR — Dashboard is active
+    // =========================================================================
+    public static void buildDashboardScreen() {
+        addTopbar(dashboardPanel, "Dashboard", "Welcome back, John");
         addSidebar(dashboardPanel, "dashboard");
 
-        // CONTENT AREA
+        // Content card
+        int pad = 14;
         JPanel content = makeRoundPanel(BG_CONTENT);
         content.setLayout(null);
-        content.setBounds(CONTENT_X + 10, CONTENT_Y + 10, CONTENT_W - 14, CONTENT_H - 14);
+        content.setBounds(CONTENT_X + pad, CONTENT_Y + pad, CONTENT_W - pad * 2, CONTENT_H - pad * 2);
         content.setBorder(BorderFactory.createLineBorder(BORDER_BLUE, 1));
         dashboardPanel.add(content);
 
-        int cx = 14, cy = 14;
-        int cw = content.getWidth() - cx * 2;
+        int cx = 18, cy = 18;
+        int innerW = content.getWidth() - cx * 2;
 
-        // ── Welcome Banner ─────────────────────────────────────────────────
+        // ── Greeting banner ────────────────────────────────────────────
         JPanel banner = makeRoundPanel(BG_ELEVATED);
         banner.setLayout(null);
-        banner.setBounds(cx, cy, cw, 72);
+        banner.setBounds(cx, cy, innerW, 100);
         content.add(banner);
 
         JLabel greet = new JLabel("Good morning, John");
-        greet.setBounds(18, 12, 400, 28);
+        greet.setBounds(22, 18, innerW - 40, 36);
         greet.setFont(F_LARGE);
         greet.setForeground(TXT_PRIMARY);
         banner.add(greet);
 
-        String currentDate = LocalDate.now().format(DATE_FMT);
-        JLabel greetSub = new JLabel("Here is your booking overview for today, " + currentDate);
-        greetSub.setBounds(18, 40, 520, 20);
+        JLabel greetSub = new JLabel("Here is your booking overview for today, " + LocalDate.now().format(DATE_FMT));
+        greetSub.setBounds(22, 54, innerW - 40, 18);
         greetSub.setFont(F_SMALL);
         greetSub.setForeground(TXT_SECONDARY);
         banner.add(greetSub);
 
-        cy += 72 + 12;
+        cy += 100 + 14;
 
-        // ── Stat Cards ─────────────────────────────────────────────────────
-        int cardW = (cw - 30) / 4;
+        // ── Stat cards ─────────────────────────────────────────────────
+        int statH = 88, statGap = 10;
+        int statW = (innerW - statGap * 3) / 4;
 
-        addStatCard(content, cx,                       cy, cardW, 72, "12",     "Total Bookings",   BLUE,   new Color(0x1E3A6E));
-        addStatCard(content, cx + (cardW + 10),        cy, cardW, 72, "$1,234", "Total Spent",      ORANGE, new Color(0x7C2D12));
-        addStatCard(content, cx + (cardW + 10) * 2,    cy, cardW, 72, "1",      "Pending Approval", PURPLE, new Color(0x2D1F6E));
-        addStatCard(content, cx + (cardW + 10) * 3,    cy, cardW, 72, "2",      "Checked In Now",   TEAL,   new Color(0x064E3B));
+        addStatCard(content, cx,                         cy, statW, statH, "12",    "Total Bookings",   BLUE,   BLUE_DIM);
+        addStatCard(content, cx + (statW + statGap),     cy, statW, statH, "$1,234","Total Spent",      ORANGE, ORANGE_DIM);
+        addStatCard(content, cx + (statW + statGap) * 2, cy, statW, statH, "1",    "Pending Approval", PURPLE, PURPLE_DIM);
+        addStatCard(content, cx + (statW + statGap) * 3, cy, statW, statH, "2",    "Checked In Now",   TEAL,   TEAL_DIM);
 
-        cy += 72 + 12;
+        cy += statH + 14;
 
-        // ── Bottom Two Columns ─────────────────────────────────────────────
-        int halfW  = (cw - 10) / 2;
-        int bottomH = CONTENT_H - cy - 28;
+        // ── Bottom — left: recent bookings | right: chart + quick actions
+        int bottomH = content.getHeight() - cy - 18;
+        int leftW   = (innerW * 56) / 100;
+        int rightW  = innerW - leftW - 14;
+        int rightX  = cx + leftW + 14;
 
-        // Left — Recent Bookings
-        JPanel rbCard = makeRoundPanel(BG_CARD);
-        rbCard.setLayout(null);
-        rbCard.setBounds(cx, cy, halfW, bottomH);
-        content.add(rbCard);
+        // Recent Bookings card
+        JPanel bookCard = makeRoundPanel(BG_CARD);
+        bookCard.setLayout(null);
+        bookCard.setBounds(cx, cy, leftW, bottomH);
+        content.add(bookCard);
 
-        JLabel rbTitle = new JLabel("Recent Bookings");
-        rbTitle.setBounds(14, 10, 200, 20);
-        rbTitle.setFont(F_MED);
-        rbTitle.setForeground(TXT_SECONDARY);
-        rbCard.add(rbTitle);
+        JLabel bookTitle = new JLabel("Recent Bookings");
+        bookTitle.setBounds(18, 16, 200, 18);
+        bookTitle.setFont(F_MED);
+        bookTitle.setForeground(TXT_SECONDARY);
+        bookCard.add(bookTitle);
 
-        String[][] rows = {
-            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Checked In",  "065F46","6EE7B7"},
-            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Pending",     "92400E","FCD34D"},
-            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Approved",    "1E3A8A","93C5FD"},
-            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Checked Out", "374151","9CA3AF"},
+        Object[][] rows = {
+            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Checked In",  new Color(0x065F46), new Color(0x6EE7B7)},
+            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Pending",     new Color(0x92400E), new Color(0xFCD34D)},
+            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Approved",    new Color(0x1E3A8A), new Color(0x93C5FD)},
+            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Checked Out", new Color(0x374151), new Color(0x9CA3AF)},
         };
-        int ry = 38;
-        for (String[] r : rows) {
-            addBookingRow(rbCard, 10, ry, halfW - 20, r[0], r[1], r[2],
-                Color.decode("#" + r[3]), Color.decode("#" + r[4]));
-            ry += 52;
+        int ry = 46;
+        for (Object[] r : rows) {
+            addBookingRow(bookCard, 14, ry, leftW - 28,
+                (String) r[0], (String) r[1], (String) r[2],
+                (Color)  r[3], (Color)  r[4]);
+            ry += 54;
         }
 
-        // Right column
-        int rx   = cx + halfW + 10;
-        int chH  = bottomH * 58 / 100;
-        int qaH  = bottomH - chH - 10;
+        // Monthly Spending chart card
+        int chartH  = (bottomH - 12) * 55 / 100;
+        int actionH = bottomH - chartH - 12;
 
-        // Monthly Spending chart
         JPanel chartCard = makeRoundPanel(BG_CARD);
         chartCard.setLayout(null);
-        chartCard.setBounds(rx, cy, halfW, chH);
+        chartCard.setBounds(rightX, cy, rightW, chartH);
+        chartCard.setBorder(BorderFactory.createLineBorder(new Color(0x1E3A6E), 1));
         content.add(chartCard);
 
         JLabel chartTitle = new JLabel("Monthly Spending");
-        chartTitle.setBounds(14, 10, 200, 20);
+        chartTitle.setBounds(16, 14, 200, 18);
         chartTitle.setFont(F_MED);
         chartTitle.setForeground(TXT_SECONDARY);
         chartCard.add(chartTitle);
 
-        JPanel chart = new JPanel() {
-            @Override protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                int[] vals  = {70, 55, 90, 30, 10};
-                String[] lb = {"Apr","May","Jun","Jul","Aug"};
-                Color[]  cl = {new Color(0x34D399), new Color(0xF87171),
-                                new Color(0x3B82F6), new Color(0x6B7280), new Color(0x374151)};
-                int pw = getWidth(), ph = getHeight();
-                int maxH = ph - 24;
-                int bw   = 22;
-                int tot  = vals.length * bw + (vals.length - 1) * 14;
-                int sx   = (pw - tot) / 2;
-                for (int i = 0; i < vals.length; i++) {
-                    int bh = (int)(vals[i] / 100.0 * maxH);
-                    int bx = sx + i * (bw + 14);
-                    g2.setColor(cl[i]);
-                    g2.fillRoundRect(bx, maxH - bh, bw, bh, 5, 5);
-                    g2.setFont(F_TINY);
-                    g2.setColor(TXT_SECONDARY);
-                    FontMetrics fm = g2.getFontMetrics();
-                    g2.drawString(lb[i], bx + (bw - fm.stringWidth(lb[i])) / 2, ph - 4);
-                }
-                g2.dispose();
-            }
-        };
-        chart.setOpaque(false);
-        chart.setBounds(10, 36, chartCard.getWidth() - 20, chartCard.getHeight() - 46);
+        JPanel chart = buildBarChart();
+        chart.setBounds(12, 40, rightW - 24, chartH - 56);
         chartCard.add(chart);
 
-        // Quick Actions
-        JPanel qaCard = makeRoundPanel(BG_CARD);
-        qaCard.setLayout(null);
-        qaCard.setBounds(rx, cy + chH + 10, halfW, qaH);
-        content.add(qaCard);
+        // Quick Actions card
+        JPanel actionCard = makeRoundPanel(BG_CARD);
+        actionCard.setLayout(null);
+        actionCard.setBounds(rightX, cy + chartH + 12, rightW, actionH);
+        content.add(actionCard);
 
-        JLabel qaTitle = new JLabel("Quick Actions");
-        qaTitle.setBounds(14, 8, 200, 20);
-        qaTitle.setFont(F_MED);
-        qaTitle.setForeground(TXT_SECONDARY);
-        qaCard.add(qaTitle);
+        JLabel actionTitle = new JLabel("Quick Actions");
+        actionTitle.setBounds(16, 14, 200, 18);
+        actionTitle.setFont(F_MED);
+        actionTitle.setForeground(TXT_SECONDARY);
+        actionCard.add(actionTitle);
 
-        int bw = (qaCard.getWidth() - 38) / 2;
-        JButton btnBrowse = makeActionBtn("Browse Rooms", ORANGE, new Color(0x7C2D12));
-        btnBrowse.setBounds(14, 32, bw, 34);
-        qaCard.add(btnBrowse);
+        int btnW = (rightW - 48) / 2;
 
-        JButton btnBook = makeActionBtn("New Booking", BLUE, new Color(0x1E3A6E));
-        btnBook.setBounds(14 + bw + 10, 32, bw, 34);
-        qaCard.add(btnBook);
+        JButton btnBrowse = makeActionBtn("Browse Rooms", TXT_PRIMARY, ORANGE_DIM, ORANGE);
+        btnBrowse.setBounds(16, 42, btnW, 36);
+        actionCard.add(btnBrowse);
 
-        // ── Button Actions ─────────────────────────────────────────────────
+        JButton btnBook = makeActionBtn("New Booking", TXT_PRIMARY, BLUE_DIM, BLUE);
+        btnBook.setBounds(16 + btnW + 16, 42, btnW, 36);
+        actionCard.add(btnBook);
+
+        // ── Button Actions ─────────────────────────────────────────────
         btnBrowse.addActionListener(e -> switchTo("rooms"));
-        btnBook.addActionListener(e -> switchTo("rooms"));
+        btnBook.addActionListener(e   -> switchTo("booking"));
     }
 
-    // SHARED: TOPBAR
-    // ==========================================================================
-    static void addTopbar(JPanel panel, String pageTitle, String subtitle) {
+    // =========================================================================
+    // SCREEN 3 — BOOKING  (placeholder — your teammate fills this)
+    // =========================================================================
+    public static void buildBookingPanel() {
+        addTopbar(bookingPanel, "Bookings", "Create or manage your booking");
+        addSidebar(bookingPanel, "booking");
+
+        JPanel content = makeRoundPanel(BG_CONTENT);
+        content.setLayout(null);
+        content.setBounds(CONTENT_X + 14, CONTENT_Y + 14, CONTENT_W - 28, CONTENT_H - 28);
+        content.setBorder(BorderFactory.createLineBorder(BORDER_BLUE, 1));
+        bookingPanel.add(content);
+
+        JLabel lbl = new JLabel("Booking panel — coming soon.");
+        lbl.setBounds(24, 24, 400, 24);
+        lbl.setFont(F_MED);
+        lbl.setForeground(TXT_PRIMARY);
+        content.add(lbl);
+    }
+
+    // =========================================================================
+    // SCREEN 4 — PAYMENT  (placeholder — your teammate fills this)
+    // =========================================================================
+    public static void buildPaymentPanel() {
+        addTopbar(paymentPanel, "Payment", "Scan or view payment codes");
+        addSidebar(paymentPanel, "payment");
+
+        JPanel content = makeRoundPanel(BG_CONTENT);
+        content.setLayout(null);
+        content.setBounds(CONTENT_X + 14, CONTENT_Y + 14, CONTENT_W - 28, CONTENT_H - 28);
+        content.setBorder(BorderFactory.createLineBorder(BORDER_BLUE, 1));
+        paymentPanel.add(content);
+
+        JLabel lbl = new JLabel("Payment panel — coming soon.");
+        lbl.setBounds(24, 24, 400, 24);
+        lbl.setFont(F_MED);
+        lbl.setForeground(TXT_PRIMARY);
+        content.add(lbl);
+    }
+
+    // =========================================================================
+    // SCREEN 5 — HISTORY  (placeholder — your teammate fills this)
+    // =========================================================================
+    public static void buildHistoryPanel() {
+        addTopbar(historyPanel, "History", "View your past bookings");
+        addSidebar(historyPanel, "history");
+
+        JPanel content = makeRoundPanel(BG_CONTENT);
+        content.setLayout(null);
+        content.setBounds(CONTENT_X + 14, CONTENT_Y + 14, CONTENT_W - 28, CONTENT_H - 28);
+        content.setBorder(BorderFactory.createLineBorder(BORDER_BLUE, 1));
+        historyPanel.add(content);
+
+        JLabel lbl = new JLabel("History panel — coming soon.");
+        lbl.setBounds(24, 24, 400, 24);
+        lbl.setFont(F_MED);
+        lbl.setForeground(TXT_PRIMARY);
+        content.add(lbl);
+    }
+
+    // =========================================================================
+    // SHARED — TOPBAR  (used by all screens)
+    // =========================================================================
+    public static void addTopbar(JPanel panel, String pageTitle, String subtitle) {
         JPanel bar = new JPanel(null) {
             @Override protected void paintComponent(Graphics g) {
                 g.setColor(BG_TOPBAR);
@@ -295,36 +324,41 @@ public class CustomerDashboard {
         panel.add(bar);
 
         JLabel brand = new JLabel("HMS");
-        brand.setBounds(14, 15, 60, 22);
-        brand.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        brand.setBounds(18, 0, 80, TOPBAR_H);
+        brand.setFont(new Font("Segoe UI", Font.BOLD, 15));
         brand.setForeground(TXT_SECONDARY);
         bar.add(brand);
 
         JLabel title = new JLabel(pageTitle, SwingConstants.CENTER);
-        title.setBounds(W / 2 - 150, 8, 300, 22);
-        title.setFont(F_TITLE);
+        title.setBounds(W / 2 - 200, 8, 400, 26);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
         title.setForeground(ORANGE);
         bar.add(title);
 
         JLabel sub = new JLabel(subtitle, SwingConstants.CENTER);
-        sub.setBounds(W / 2 - 150, 28, 300, 16);
+        sub.setBounds(W / 2 - 200, 32, 400, 16);
         sub.setFont(F_TINY);
         sub.setForeground(TXT_SECONDARY);
         bar.add(sub);
 
-        String topDate = LocalDate.now().format(DATE_FMT);
-        JLabel dateBell = new JLabel(topDate + "   \uD83D\uDD14");
-        dateBell.setBounds(W - 160, 16, 148, 20);
-        dateBell.setFont(F_SMALL);
-        dateBell.setForeground(TXT_SECONDARY);
-        dateBell.setHorizontalAlignment(SwingConstants.RIGHT);
-        bar.add(dateBell);
+        JLabel dateLbl = new JLabel(LocalDate.now().format(DATE_FMT));
+        dateLbl.setBounds(W - 200, 0, 140, TOPBAR_H);
+        dateLbl.setFont(F_SMALL);
+        dateLbl.setForeground(TXT_SECONDARY);
+        dateLbl.setHorizontalAlignment(SwingConstants.RIGHT);
+        bar.add(dateLbl);
+
+        JLabel bell = new JLabel("\uD83D\uDD14");
+        bell.setBounds(W - 52, 0, 40, TOPBAR_H);
+        bell.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        bell.setHorizontalAlignment(SwingConstants.CENTER);
+        bar.add(bell);
     }
 
-    // ==========================================================================
-    // SHARED: SIDEBAR
-    // ==========================================================================
-    static void addSidebar(JPanel panel, String activePage) {
+    // =========================================================================
+    // SHARED — SIDEBAR  (used by all screens)
+    // =========================================================================
+    public static void addSidebar(JPanel panel, String activePage) {
         JPanel side = new JPanel(null) {
             @Override protected void paintComponent(Graphics g) {
                 g.setColor(BG_SIDEBAR);
@@ -337,44 +371,40 @@ public class CustomerDashboard {
         side.setOpaque(false);
         panel.add(side);
 
-        JLabel hms = new JLabel("HMS");
-        hms.setBounds(14, 12, 100, 18);
-        hms.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        hms.setForeground(TXT_PRIMARY);
-        side.add(hms);
+        JLabel hmsLbl = new JLabel("HMS");
+        hmsLbl.setBounds(18, 14, 100, 18);
+        hmsLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        hmsLbl.setForeground(TXT_PRIMARY);
+        side.add(hmsLbl);
 
         JLabel custLbl = new JLabel("Customer");
-        custLbl.setBounds(14, 34, 120, 16);
+        custLbl.setBounds(18, 34, 120, 14);
         custLbl.setFont(F_TINY);
         custLbl.setForeground(TXT_MUTED);
         side.add(custLbl);
 
-        // Nav items
-        boolean isDash    = activePage.equals("dashboard");
-        boolean isRooms   = activePage.equals("rooms");
-        boolean isBook    = activePage.equals("booking");
-        boolean isPayment = activePage.equals("payment");
-        boolean isHistory = activePage.equals("history");
+        // Nav items — same order as leader's code
+        Object[][] navItems = {
+            {"\u229E", "Dashboard", "dashboard", 58},
+            {"\u2394",  "Rooms",     "rooms",     102},
+            {"\u2612",  "Bookings",  "booking",   146},
+            {"\u25A4",  "Payment",   "payment",   190},
+            {"\u25A1",  "History",   "history",   234},
+        };
 
-        JButton navDash    = makeNavBtn("  D  Dashboard",     isDash,    58);
-        JButton navRooms   = makeNavBtn("  R  Browse Rooms",   isRooms,   96);
-        JButton navBook    = makeNavBtn("  B  Booking Panel",  isBook,   134);
-        JButton navPay     = makeNavBtn("  P  Payment QR",     isPayment,172);
-        JButton navHistory = makeNavBtn("  H  Booking History",isHistory,210);
+        for (Object[] item : navItems) {
+            String  icon   = (String) item[0];
+            String  label  = (String) item[1];
+            String  key    = (String) item[2];
+            int     y      = (int)    item[3];
+            boolean active = key.equals(activePage);
 
-        side.add(navDash);
-        side.add(navRooms);
-        side.add(navBook);
-        side.add(navPay);
-        side.add(navHistory);
+            JButton btn = makeNavBtn(icon, label, active, y);
+            btn.addActionListener(e -> switchTo(key));
+            side.add(btn);
+        }
 
-        navDash.addActionListener(e  -> switchTo("dashboard"));
-        navRooms.addActionListener(e -> switchTo("rooms"));
-        navBook.addActionListener(e -> switchTo("booking"));
-        navPay.addActionListener(e -> switchTo("payment"));
-        navHistory.addActionListener(e -> switchTo("history"));
-
-        // Footer
+        // Footer — avatar + name
         JPanel footer = new JPanel(null) {
             @Override protected void paintComponent(Graphics g) {
                 g.setColor(BORDER);
@@ -383,68 +413,75 @@ public class CustomerDashboard {
                 g.fillRect(0, 1, getWidth(), getHeight() - 1);
             }
         };
-        footer.setBounds(0, H - TOPBAR_H - 52, SIDEBAR_W, 52);
+        footer.setBounds(0, H - TOPBAR_H - 58, SIDEBAR_W, 58);
         footer.setOpaque(false);
         side.add(footer);
 
-        // Avatar circle
         JPanel avatar = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(new Color(0x1E3A6E));
-                g2.fillOval(0, 0, 32, 32);
+                g2.fillOval(0, 0, 34, 34);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
                 g2.setColor(new Color(0x93C5FD));
                 FontMetrics fm = g2.getFontMetrics();
-                g2.drawString("ST", (32 - fm.stringWidth("ST")) / 2,
-                    (32 + fm.getAscent() - fm.getDescent()) / 2);
+                g2.drawString("ST", (34 - fm.stringWidth("ST")) / 2,
+                    (34 + fm.getAscent() - fm.getDescent()) / 2);
                 g2.dispose();
             }
         };
         avatar.setOpaque(false);
-        avatar.setBounds(10, 10, 32, 32);
+        avatar.setBounds(12, 12, 34, 34);
         footer.add(avatar);
 
-        JLabel uname = new JLabel("Staff");
-        uname.setBounds(50, 8, 110, 16);
+        JLabel uname = new JLabel("Customer");
+        uname.setBounds(54, 10, 120, 16);
         uname.setFont(F_MED);
         uname.setForeground(TXT_PRIMARY);
         footer.add(uname);
 
         JLabel uemail = new JLabel("staff@gmail.com");
-        uemail.setBounds(50, 24, 110, 14);
+        uemail.setBounds(54, 28, 130, 14);
         uemail.setFont(F_TINY);
         uemail.setForeground(TXT_MUTED);
         footer.add(uemail);
     }
 
-    // ==========================================================================
-    // HELPERS
-    // ==========================================================================
+    // =========================================================================
+    // SHARED HELPERS  (all child panels call these)
+    // =========================================================================
 
-    static JButton makeNavBtn(String text, boolean active, int y) {
-        JButton btn = new JButton(text) {
+    public static JButton makeNavBtn(String icon, String label, boolean active, int y) {
+        JButton btn = new JButton() {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 if (active) {
                     g2.setColor(NAV_ACTIVE_BG);
-                    g2.fillRoundRect(6, 2, getWidth() - 12, getHeight() - 4, 8, 8);
-                    g2.setColor(ORANGE);
-                    g2.fillRoundRect(2, 6, 3, getHeight() - 12, 3, 3);
+                    g2.fillRoundRect(8, 3, getWidth() - 16, getHeight() - 6, 10, 10);
                 } else if (getModel().isRollover()) {
                     g2.setColor(NAV_HOVER_BG);
-                    g2.fillRoundRect(6, 2, getWidth() - 12, getHeight() - 4, 8, 8);
+                    g2.fillRoundRect(8, 3, getWidth() - 16, getHeight() - 6, 10, 10);
                 }
+                int boxSize = 26, boxX = 18;
+                int boxY = (getHeight() - boxSize) / 2;
+                g2.setColor(active ? new Color(0x7C2D12) : new Color(0x1A1A30));
+                g2.fillRoundRect(boxX, boxY, boxSize, boxSize, 6, 6);
+                g2.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+                g2.setColor(active ? NAV_ACTIVE_TEXT : TXT_SECONDARY);
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(icon, boxX + (boxSize - fm.stringWidth(icon)) / 2,
+                    boxY + (boxSize + fm.getAscent() - fm.getDescent()) / 2);
+                g2.setFont(active ? F_MED : F_REG);
+                g2.setColor(active ? NAV_ACTIVE_TEXT : TXT_SECONDARY);
+                FontMetrics fm2 = g2.getFontMetrics();
+                g2.drawString(label, boxX + boxSize + 10,
+                    (getHeight() + fm2.getAscent() - fm2.getDescent()) / 2);
                 g2.dispose();
-                super.paintComponent(g);
             }
         };
-        btn.setBounds(0, y, SIDEBAR_W, 36);
-        btn.setFont(active ? F_MED : F_REG);
-        btn.setForeground(active ? NAV_ACTIVE_TEXT : TXT_SECONDARY);
-        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setBounds(0, y, SIDEBAR_W, 40);
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
@@ -452,7 +489,7 @@ public class CustomerDashboard {
         return btn;
     }
 
-    static void addStatCard(JPanel p, int x, int y, int w, int h,
+    public static void addStatCard(JPanel p, int x, int y, int w, int h,
                             String num, String label, Color accent, Color bg) {
         JPanel card = new JPanel(null) {
             @Override protected void paintComponent(Graphics g) {
@@ -470,13 +507,13 @@ public class CustomerDashboard {
         card.setOpaque(false);
 
         JLabel numLbl = new JLabel(num);
-        numLbl.setBounds(12, 10, w - 16, 28);
-        numLbl.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        numLbl.setBounds(14, 12, w - 20, 32);
+        numLbl.setFont(new Font("Segoe UI", Font.BOLD, 22));
         numLbl.setForeground(accent);
         card.add(numLbl);
 
         JLabel lbl = new JLabel(label);
-        lbl.setBounds(12, 40, w - 16, 18);
+        lbl.setBounds(14, 46, w - 20, 16);
         lbl.setFont(F_TINY);
         lbl.setForeground(TXT_SECONDARY);
         card.add(lbl);
@@ -484,7 +521,7 @@ public class CustomerDashboard {
         p.add(card);
     }
 
-    static void addBookingRow(JPanel parent, int x, int y, int w,
+    public static void addBookingRow(JPanel parent, int x, int y, int w,
                               String name, String dates, String status,
                               Color bgBadge, Color fgBadge) {
         JPanel row = new JPanel(null) {
@@ -496,17 +533,17 @@ public class CustomerDashboard {
                 g2.dispose();
             }
         };
-        row.setBounds(x, y, w, 44);
+        row.setBounds(x, y, w, 46);
         row.setOpaque(false);
 
         JLabel n = new JLabel(name);
-        n.setBounds(10, 5, w - 110, 18);
+        n.setBounds(12, 6, w - 120, 18);
         n.setFont(F_MED);
         n.setForeground(TXT_PRIMARY);
         row.add(n);
 
         JLabel d = new JLabel(dates);
-        d.setBounds(10, 23, w - 110, 14);
+        d.setBounds(12, 25, w - 120, 14);
         d.setFont(F_TINY);
         d.setForeground(TXT_SECONDARY);
         row.add(d);
@@ -516,12 +553,12 @@ public class CustomerDashboard {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(bgBadge);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
                 g2.dispose();
                 super.paintComponent(g);
             }
         };
-        badge.setBounds(w - 96, 12, 88, 20);
+        badge.setBounds(w - 100, 13, 92, 20);
         badge.setFont(F_TINY);
         badge.setForeground(fgBadge);
         badge.setOpaque(false);
@@ -530,121 +567,47 @@ public class CustomerDashboard {
         parent.add(row);
     }
 
-    static void addRoomCard(JPanel parent, int x, int y, int w, int h,
-                            String name, String desc, String price,
-                            String badgeText, Color badgeBg, Color badgeFg) {
-        JPanel card = new JPanel(null) {
+    public static JPanel buildBarChart() {
+        return new JPanel() {
             @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(BG_CARD);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-                g2.setColor(BORDER);
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 18, 18);
-                g2.dispose();
-            }
-        };
-        card.setBounds(x, y, w, h);
-        card.setOpaque(false);
-
-        JPanel imgBox = new JPanel(null) {
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gp = new GradientPaint(0, 0, new Color(0x232649), 0, getHeight(), new Color(0x0B0B17));
-                g2.setPaint(gp);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-                g2.setColor(new Color(0xFFFFFF, true));
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 18));
-                String roomType = name.split(" ")[0];
-                g2.drawString(roomType, 16, getHeight() - 20);
-                g2.dispose();
-            }
-        };
-        imgBox.setBounds(8, 8, w - 16, 110);
-        imgBox.setOpaque(false);
-        card.add(imgBox);
-
-        JLabel badge = new JLabel(badgeText, SwingConstants.CENTER) {
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(badgeBg);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
-                g2.dispose();
                 super.paintComponent(g);
-            }
-        };
-        badge.setBounds(w - 108, 16, 90, 24);
-        badge.setFont(F_TINY);
-        badge.setForeground(badgeFg);
-        badge.setOpaque(false);
-        card.add(badge);
-
-        JLabel nameLbl = new JLabel(name);
-        nameLbl.setBounds(16, 128, w - 32, 24);
-        nameLbl.setFont(F_TITLE);
-        nameLbl.setForeground(TXT_PRIMARY);
-        card.add(nameLbl);
-
-        JLabel descLbl = new JLabel(desc);
-        descLbl.setBounds(16, 152, w - 32, 18);
-        descLbl.setFont(F_SMALL);
-        descLbl.setForeground(TXT_SECONDARY);
-        card.add(descLbl);
-
-        JLabel priceLbl = new JLabel(price);
-        priceLbl.setBounds(16, 174, w - 32, 22);
-        priceLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        priceLbl.setForeground(ORANGE);
-        card.add(priceLbl);
-
-        JButton bookBtn = makeActionBtn("Book Now", TXT_PRIMARY, new Color(0xF97316));
-        bookBtn.setBounds(16, h - 44, w - 32, 34);
-        card.add(bookBtn);
-
-        parent.add(card);
-    }
-
-    static JButton makeFilterChip(String text, boolean active) {
-        JButton btn = new JButton(text) {
-            @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                if (active) {
-                    g2.setColor(new Color(0x7C2D12));
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
-                    g2.setColor(ORANGE);
-                    g2.setStroke(new BasicStroke(1.5f));
-                    g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 20, 20);
-                } else {
-                    g2.setColor(BG_ELEVATED);
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
-                    g2.setColor(BORDER);
-                    g2.setStroke(new BasicStroke(1f));
-                    g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 20, 20);
+                int[] vals      = {70, 55, 90, 22, 12};
+                Color[] colors  = {
+                    new Color(0x22C55E), new Color(0xF97316),
+                    new Color(0x3B82F6), new Color(0x6B7280), new Color(0x94A3B8)
+                };
+                String[] labels = {"Apr","May","Jun","Jul","Aug"};
+                int pw = getWidth(), ph = getHeight();
+                int maxBarH = ph - 28;
+                int bw = 28, gap = 20;
+                int totalW = vals.length * bw + (vals.length - 1) * gap;
+                int startX = (pw - totalW) / 2;
+                for (int i = 0; i < vals.length; i++) {
+                    int barH = (int)(vals[i] / 100.0 * maxBarH);
+                    int bx   = startX + i * (bw + gap);
+                    int by   = ph - barH - 24;
+                    g2.setColor(colors[i]);
+                    g2.fillRoundRect(bx, by, bw, barH, 6, 6);
+                    g2.setFont(F_TINY);
+                    g2.setColor(TXT_MUTED);
+                    FontMetrics fm = g2.getFontMetrics();
+                    g2.drawString(labels[i], bx + (bw - fm.stringWidth(labels[i])) / 2, ph - 6);
                 }
                 g2.dispose();
-                super.paintComponent(g);
             }
         };
-        btn.setFont(active ? F_MED : F_REG);
-        btn.setForeground(active ? ORANGE : TXT_SECONDARY);
-        btn.setContentAreaFilled(false);
-        btn.setBorderPainted(false);
-        btn.setFocusPainted(false);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        return btn;
     }
 
-    static JButton makeActionBtn(String text, Color fg, Color bg) {
+    public static JButton makeActionBtn(String text, Color fg, Color bgDim, Color accent) {
         JButton btn = new JButton(text) {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getModel().isRollover() ? bg.brighter() : bg);
+                g2.setColor(getModel().isRollover() ? bgDim.brighter() : bgDim);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                g2.setColor(fg);
+                g2.setColor(accent);
                 g2.setStroke(new BasicStroke(1.2f));
                 g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, 8, 8);
                 g2.dispose();
@@ -652,7 +615,7 @@ public class CustomerDashboard {
             }
         };
         btn.setFont(F_MED);
-        btn.setForeground(fg);
+        btn.setForeground(accent);
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
@@ -660,7 +623,12 @@ public class CustomerDashboard {
         return btn;
     }
 
-    static JPanel makeRoundPanel(Color bg) {
+    // Overload kept for BrowseRoomsPanel compatibility
+    public static JButton makeActionBtn(String text, Color fg, Color bg) {
+        return makeActionBtn(text, fg, bg.darker(), bg);
+    }
+
+    public static JPanel makeRoundPanel(Color bg) {
         return new JPanel(null) {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -673,62 +641,11 @@ public class CustomerDashboard {
     }
 
     // ── Switch between screens ─────────────────────────────────────────
-    static void switchTo(String page) {
+    public static void switchTo(String page) {
         dashboardPanel.setVisible(page.equals("dashboard"));
         roomsPanel.setVisible(page.equals("rooms"));
         bookingPanel.setVisible(page.equals("booking"));
         paymentPanel.setVisible(page.equals("payment"));
         historyPanel.setVisible(page.equals("history"));
-    }
-
-    static void buildBookingPanel() {
-        addTopbar(bookingPanel, "Booking Panel", "Create or manage your booking");
-        addSidebar(bookingPanel, "booking");
-
-        JPanel content = makeRoundPanel(BG_CONTENT);
-        content.setLayout(null);
-        content.setBounds(CONTENT_X + 10, CONTENT_Y + 10, CONTENT_W - 14, CONTENT_H - 14);
-        content.setBorder(BorderFactory.createLineBorder(BORDER_BLUE, 1));
-        bookingPanel.add(content);
-
-        JLabel label = new JLabel("Booking Panel content will appear here.");
-        label.setBounds(24, 24, 400, 24);
-        label.setFont(F_MED);
-        label.setForeground(TXT_PRIMARY);
-        content.add(label);
-    }
-
-    static void buildPaymentPanel() {
-        addTopbar(paymentPanel, "Payment QR", "Scan or view payment codes");
-        addSidebar(paymentPanel, "payment");
-
-        JPanel content = makeRoundPanel(BG_CONTENT);
-        content.setLayout(null);
-        content.setBounds(CONTENT_X + 10, CONTENT_Y + 10, CONTENT_W - 14, CONTENT_H - 14);
-        content.setBorder(BorderFactory.createLineBorder(BORDER_BLUE, 1));
-        paymentPanel.add(content);
-
-        JLabel label = new JLabel("Payment QR panel content will appear here.");
-        label.setBounds(24, 24, 420, 24);
-        label.setFont(F_MED);
-        label.setForeground(TXT_PRIMARY);
-        content.add(label);
-    }
-
-    static void buildHistoryPanel() {
-        addTopbar(historyPanel, "Booking History", "View your past bookings");
-        addSidebar(historyPanel, "history");
-
-        JPanel content = makeRoundPanel(BG_CONTENT);
-        content.setLayout(null);
-        content.setBounds(CONTENT_X + 10, CONTENT_Y + 10, CONTENT_W - 14, CONTENT_H - 14);
-        content.setBorder(BorderFactory.createLineBorder(BORDER_BLUE, 1));
-        historyPanel.add(content);
-
-        JLabel label = new JLabel("Booking history content will appear here.");
-        label.setBounds(24, 24, 420, 24);
-        label.setFont(F_MED);
-        label.setForeground(TXT_PRIMARY);
-        content.add(label);
     }
 }
