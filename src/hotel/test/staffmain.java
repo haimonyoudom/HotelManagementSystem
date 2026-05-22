@@ -3,7 +3,6 @@ package hotel.test;
 import javax.swing.*;
 import java.awt.*;
 import hotel.ui.common.LoginFrame;
-import hotel.ui.staff.StaffDashboard;
 
 public class staffmain {
     public static void main(String[] args) {
@@ -42,9 +41,5 @@ public class staffmain {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        SwingUtilities.invokeLater(() -> {
-            StaffDashboard dashboard = new StaffDashboard();
-            dashboard.setVisible(true);
-        });
     }
 }
