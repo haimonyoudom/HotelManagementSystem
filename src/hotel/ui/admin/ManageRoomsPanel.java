@@ -2,253 +2,276 @@ package hotel.ui.admin;
 
 import hotel.model.Room;
 import hotel.service.RoomService;
-
+import hotel.ui.util.UIConstants;
+import hotel.ui.util.UIUtils;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 public class ManageRoomsPanel extends JPanel {
-
-    static final Color BG_DARK = new Color(18, 18, 18);
-    static final Color BG_CARD = new Color(28, 28, 28);
-    static final Color ACCENT_RED = new Color(200, 50, 50);
-    static final Color TEXT_WHITE = new Color(240, 240, 240);
-    static final Color TEXT_GRAY = new Color(150, 150, 150);
-    static final Color TEXT_GREEN = new Color(80, 200, 120);
-    static final Color TEXT_ORANGE = new Color(220, 160, 60);
-    static final Color BORDER_COLOR = new Color(50, 50, 50);
-
-    static final int CONTENT_WIDTH = 1180;
-    static final int FRAME_HEIGHT = 900;
-
     private RoomService roomService;
-    private JPanel roomGridContainer;
-    private List<Room> roomList;
+    private JPanel roomsGrid;
+    private JPanel filterPanel;
 
     public ManageRoomsPanel() {
-        this.roomService = new RoomService();
-        setLayout(null);
-        setBackground(BG_DARK);
+        roomService = new RoomService();
+        setLayout(new BorderLayout(0, 20));
+        setBackground(UIConstants.BG_DARK);
+        setBorder(new EmptyBorder(25, 25, 25, 25));
 
-        // ═══════════════════════════════════════════════════════════
-        // HEADER
-        // ═══════════════════════════════════════════════════════════
-        JLabel title = new JLabel("Rooms");
-        title.setBounds(30, 25, 200, 35);
-        title.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        title.setForeground(TEXT_WHITE);
-        add(title);
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(UIConstants.BG_DARK);
 
-        JLabel subtitle = new JLabel("Find your perfect room");
-        subtitle.setBounds(30, 60, 300, 20);
-        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        subtitle.setForeground(TEXT_GRAY);
-        add(subtitle);
+        JLabel titleLabel = new JLabel("Rooms");
+        titleLabel.setFont(UIConstants.FONT_TITLE);
+        titleLabel.setForeground(UIConstants.TEXT_PRIMARY);
+        headerPanel.add(titleLabel, BorderLayout.WEST);
 
-        // Date display
-        JLabel dateLabel = new JLabel("Apr 19, 2026");
-        dateLabel.setBounds(CONTENT_WIDTH - 150, 30, 120, 25);
-        dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        dateLabel.setForeground(TEXT_GRAY);
-        add(dateLabel);
+        filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        filterPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        filterPanel.setBackground(UIConstants.BG_DARK);
 
-        // ═══════════════════════════════════════════════════════════
-        // FILTER BUTTONS
-        // ═══════════════════════════════════════════════════════════
-        String[] filters = {"All", "Standard", "Deluxe", "Suite", "Presidential", "Family"};
-        int filterX = 30;
+        String[] filters = {"All", "Single", "Double", "Suite", "Deluxe"};
         for (String filter : filters) {
-            final String filterType = filter;
-            JButton btn = createStyledButton(filter, filterX, 100, 90, 36, 
-                filter.equals("All") ? ACCENT_RED : BG_CARD, TEXT_WHITE);
-            btn.addActionListener(e -> filterRooms(filterType));
-            add(btn);
-            filterX += 100;
+            filterPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
+            JButton btn = UIUtils.createSecondaryButton(filter);
+            btn.setPreferredSize(new Dimension(btn.getPreferredSize().width, 32));
+            attachFilterButtonBehavior(btn);
+            filterPanel.add(btn);
         }
+        headerPanel.add(filterPanel, BorderLayout.SOUTH);
+        add(headerPanel, BorderLayout.NORTH);
 
-        // ═══════════════════════════════════════════════════════════
-        // ROOM CARDS GRID CONTAINER
-        // ═══════════════════════════════════════════════════════════
-        roomGridContainer = new JPanel();
-        roomGridContainer.setLayout(null);
-        roomGridContainer.setBounds(0, 160, CONTENT_WIDTH, FRAME_HEIGHT - 160);
-        roomGridContainer.setBackground(BG_DARK);
-        add(roomGridContainer);
+        roomsGrid = new JPanel(new GridLayout(0, 4, 15, 15));
+        roomsGrid.setBackground(UIConstants.BG_DARK);
 
-        // Load data using YOUR RoomService
-        loadRoomsFromDatabase();
-    }
+        JScrollPane scrollPane = new JScrollPane(roomsGrid);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(UIConstants.BG_DARK);
 
-    // ── Load rooms using YOUR RoomService.getAllRooms() ─────────
-    private void loadRoomsFromDatabase() {
-        roomList = roomService.getAllRooms();
-        System.out.println("Loaded " + roomList.size() + " rooms via RoomService");
+        add(scrollPane, BorderLayout.CENTER);
 
-        if (roomList == null || roomList.isEmpty()) {
-            roomList = getDemoRooms();
-        }
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        bottomPanel.setBackground(UIConstants.BG_DARK);
 
-        renderRoomCards(roomList);
-    }
+        JButton addButton = UIUtils.createPrimaryButton("+ Add Room");
+        addButton.setPreferredSize(new Dimension(120, 36));
+        bottomPanel.add(addButton);
 
-    // ── Filter rooms using YOUR RoomService.searchRooms() ──────
-    private void filterRooms(String type) {
-        if (type.equals("All")) {
-            roomList = roomService.getAllRooms();
-            renderRoomCards(roomList);
-            return;
-        }
+        addButton.addActionListener(e -> {
+            JDialog dialogue = new JDialog((Frame) null, "Add Room", true);
+            dialogue.setSize(400, 320);
+            dialogue.setLocationRelativeTo(null);
+            dialogue.getContentPane().setBackground(UIConstants.BG_DARK);
+            dialogue.setLayout(new BorderLayout());
 
-        List<Room> filtered = roomService.searchRooms(type);
-        if (filtered == null || filtered.isEmpty()) {
-            // Fallback to manual filter
-            filtered = new java.util.ArrayList<>();
-            for (Room r : roomList) {
-                if (r.getType().equalsIgnoreCase(type)) {
-                    filtered.add(r);
-                }
-            }
-        }
-        renderRoomCards(filtered);
-    }
+            JPanel formPanel = new JPanel(new GridLayout(4, 2, 10, 10));
+            formPanel.setBackground(UIConstants.BG_DARK);
+            formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-    // ── Render room cards ──────────────────────────────────────
-    private void renderRoomCards(List<Room> rooms) {
-        roomGridContainer.removeAll();
+            formPanel.add(new JLabel("Room Label:"));
+            JTextField roomNumberField = UIUtils.createStyledTextField();
+            formPanel.add(roomNumberField);
 
-        int cardX = 30, cardY = 0;
-        int cardWidth = 360, cardHeight = 220;
-        int cardsPerRow = 3;
-        int count = 0;
+            formPanel.add(new JLabel("Type:"));
+            JComboBox<String> typeCombo = UIUtils.createStyledComboBox(new String[]{"Single", "Double", "Continued", "Deluxed"});
+            formPanel.add(typeCombo);
 
-        for (Room room : rooms) {
-            if (count > 0 && count % cardsPerRow == 0) {
-                cardX = 30;
-                cardY += cardHeight + 20;
+            formPanel.add(new JLabel("Price/Night:"));
+            JTextField priceField = UIUtils.createStyledTextField();
+            formPanel.add(priceField);
+
+            formPanel.add(new JLabel("Status:"));
+            JComboBox<String> statusCombo = UIUtils.createStyledComboBox(new String[]{"Available", "Occupied"});
+            formPanel.add(statusCombo);
+
+            JButton saveBtn = UIUtils.createPrimaryButton("Save");
+            saveBtn.addActionListener(ev -> {
+            String number = roomNumberField.getText().trim();
+            String type = (String) typeCombo.getSelectedItem();
+            String priceText = priceField.getText().trim();
+
+            if (number.isEmpty() || priceText.isEmpty()) {
+                UIUtils.showError(dialogue, "Please fill in all fields.");
+                return;
             }
 
-            JPanel card = createRoomCard(room, cardX, cardY, cardWidth, cardHeight);
-            roomGridContainer.add(card);
-
-            cardX += cardWidth + 20;
-            count++;
-        }
-
-        roomGridContainer.revalidate();
-        roomGridContainer.repaint();
-    }
-
-    // ── Create room card from YOUR Room model ──────────────────
-    JPanel createRoomCard(Room room, int x, int y, int w, int h) {
-        JPanel card = new JPanel();
-        card.setLayout(null);
-        card.setBounds(x, y, w, h);
-        card.setBackground(BG_CARD);
-        card.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
-
-        // Room image placeholder
-        JPanel imgPanel = new JPanel() {
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(new Color(60, 60, 60));
-                g2d.fillRect(0, 0, getWidth(), getHeight());
-                g2d.setColor(TEXT_GRAY);
-                g2d.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                g2d.drawString("[Room Image]", getWidth()/2 - 35, getHeight()/2);
+            double price;
+            try {
+                price = Double.parseDouble(priceText);
+                if (price <= 0) throw new NumberFormatException();
+            } catch (NumberFormatException ex) {
+                UIUtils.showError(dialogue, "Please enter a valid price.");
+                return;
             }
-        };
-        imgPanel.setBounds(15, 15, w - 30, 100);
-        card.add(imgPanel);
 
-        // Room number (String from YOUR model)
-        JLabel numLabel = new JLabel("Room " + room.getRoomNumber());
-        numLabel.setBounds(15, 125, 120, 22);
-        numLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        numLabel.setForeground(TEXT_WHITE);
-        card.add(numLabel);
-
-        // Type
-        JLabel typeLabel = new JLabel(room.getType());
-        typeLabel.setBounds(w - 110, 125, 95, 20);
-        typeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        typeLabel.setForeground(TEXT_GRAY);
-        typeLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        card.add(typeLabel);
-
-        // Price (from YOUR model: pricePerNight)
-        JLabel priceLabel = new JLabel("$" + (int)room.getPricePerNight() + "/night");
-        priceLabel.setBounds(15, 152, 120, 22);
-        priceLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        priceLabel.setForeground(TEXT_GREEN);
-        card.add(priceLabel);
-
-        // Status (from YOUR model: isAvailable boolean)
-        String status = room.isAvailable() ? "Available" : "Occupied";
-        JLabel statusLabel = new JLabel(status);
-        statusLabel.setBounds(w - 105, 152, 90, 24);
-        statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
-        if (room.isAvailable()) {
-            statusLabel.setForeground(TEXT_GREEN);
-            statusLabel.setBackground(new Color(30, 60, 40));
-        } else {
-            statusLabel.setForeground(ACCENT_RED);
-            statusLabel.setBackground(new Color(60, 30, 30));
-        }
-        statusLabel.setOpaque(true);
-        statusLabel.setBorder(BorderFactory.createEmptyBorder(3, 8, 3, 8));
-        card.add(statusLabel);
-
-        // Details
-        JLabel detailLabel = new JLabel("ID: " + room.getId() + " • " + room.getType() + " Room");
-        detailLabel.setBounds(15, 185, w - 30, 18);
-        detailLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        detailLabel.setForeground(TEXT_GRAY);
-        card.add(detailLabel);
-
-        return card;
-    }
-
-    // ── Demo data matching YOUR Room model ─────────────────────
-    private List<Room> getDemoRooms() {
-        List<Room> rooms = new java.util.ArrayList<>();
-        rooms.add(new Room(1, "101", "Standard", 120.0, true));
-        rooms.add(new Room(2, "102", "Deluxe", 180.0, false));
-        rooms.add(new Room(3, "103", "Suite", 350.0, true));
-        rooms.add(new Room(4, "104", "Presidential", 800.0, false));
-        rooms.add(new Room(5, "105", "Family", 250.0, true));
-        rooms.add(new Room(6, "106", "Standard", 120.0, false));
-        rooms.add(new Room(7, "201", "Deluxe", 200.0, true));
-        rooms.add(new Room(8, "202", "Suite", 380.0, false));
-        rooms.add(new Room(9, "301", "Presidential", 900.0, true));
-        return rooms;
-    }
-
-    JButton createStyledButton(String text, int x, int y, int w, int h, Color bg, Color fg) {
-        JButton btn = new JButton(text);
-        btn.setBounds(x, y, w, h);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setBackground(bg);
-        btn.setForeground(fg);
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setOpaque(true);
-
-        btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                btn.setBackground(bg.brighter());
-            }
-            public void mouseExited(MouseEvent e) {
-                btn.setBackground(bg);
+            boolean success = roomService.addRoom(number, type, price);
+            if (success) {
+                UIUtils.showSuccess(dialogue, "Room added successfully.");
+                dialogue.dispose();
+                loadRooms();
+            } else {
+                UIUtils.showError(dialogue, "Failed to add room. Number may already exist.");
             }
         });
 
-        return btn;
+            dialogue.add(formPanel, BorderLayout.CENTER);
+            dialogue.add(saveBtn, BorderLayout.SOUTH);
+            dialogue.setVisible(true);
+        });
+
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        loadRooms();
+    }
+
+    private void loadRooms() {
+        roomsGrid.removeAll();
+        try {
+            List<Room> rooms = roomService.getAllRooms();
+            for (Room room : rooms) {
+                roomsGrid.add(createRoomCard(room));
+            }
+        } catch (Exception e) {
+            String[][] demoRooms = {
+                {"101", "Single", "89.00", "Available"},
+                {"102", "Double", "129.00", "Occupied"},
+                {"103", "Suite", "249.00", "Available"},
+                {"104", "Deluxe", "189.00", "Available"},
+                {"105", "Single", "89.00", "Occupied"},
+                {"201", "Double", "139.00", "Available"},
+                {"202", "Suite", "259.00", "Occupied"},
+                {"203", "Deluxe", "199.00", "Available"},
+            };
+            for (String[] r : demoRooms) {
+                Room room = new Room(0, r[0], r[1], Double.parseDouble(r[2]), "Available".equals(r[3]));
+                roomsGrid.add(createRoomCard(room));
+            }
+        }
+        roomsGrid.revalidate();
+        roomsGrid.repaint();
+    }
+
+    private void attachFilterButtonBehavior(JButton button) {
+        button.putClientProperty("selected", false);
+        button.addActionListener(e -> {
+            for (Component component : filterPanel.getComponents()) {
+                if (component instanceof JButton) {
+                    setFilterButtonSelected((JButton) component, false);
+                }
+            }
+            setFilterButtonSelected(button, true);
+        });
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (!Boolean.TRUE.equals(button.getClientProperty("selected"))) {
+                    button.setBackground(UIConstants.BG_INPUT);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (!Boolean.TRUE.equals(button.getClientProperty("selected"))) {
+                    button.setBackground(UIConstants.BG_CARD);
+                }
+            }
+        });
+    }
+
+    private void setFilterButtonSelected(JButton button, boolean selected) {
+        button.putClientProperty("selected", selected);
+        if (selected) {
+            button.setBackground(UIConstants.ACCENT_RED);
+            button.setForeground(Color.WHITE);
+        } else {
+            button.setBackground(UIConstants.BG_CARD);
+            button.setForeground(UIConstants.TEXT_PRIMARY);
+        }
+    }
+
+    private JPanel createRoomCard(Room room) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(UIConstants.BG_DARK);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(UIConstants.BORDER),
+            new EmptyBorder(15, 15, 15, 15)
+        ));
+        card.setPreferredSize(new Dimension(250, 180));
+
+        JPanel imagePanel = new JPanel();
+        imagePanel.setBackground(UIConstants.BG_INPUT);
+        imagePanel.setPreferredSize(new Dimension(0, 80));
+        imagePanel.setBorder(BorderFactory.createLineBorder(UIConstants.BORDER));
+        imagePanel.setLayout(new BorderLayout());
+
+        JLabel imgLabel = new JLabel("🖼️", SwingConstants.CENTER);
+        imgLabel.setFont(new Font("Segoe UI", Font.PLAIN, 32));
+        imagePanel.add(imgLabel, BorderLayout.CENTER);
+
+        card.add(imagePanel, BorderLayout.NORTH);
+
+        JPanel infoPanel = new JPanel(new GridLayout(3, 1, 0, 3));
+        infoPanel.setOpaque(false);
+        infoPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
+
+        JLabel numberLabel = new JLabel("Room " + room.getRoomNumber());
+        numberLabel.setFont(UIConstants.FONT_SUBHEADER);
+        numberLabel.setForeground(UIConstants.TEXT_PRIMARY);
+
+        JLabel typeLabel = new JLabel(room.getType());
+        typeLabel.setFont(UIConstants.FONT_SMALL);
+        typeLabel.setForeground(UIConstants.TEXT_SECONDARY);
+
+        JPanel statusPanel = new JPanel(new BorderLayout());
+        statusPanel.setOpaque(false);
+
+        JLabel priceLabel = new JLabel("$" + String.format("%.2f", room.getPricePerNight()) + "/night");
+        priceLabel.setFont(UIConstants.FONT_SMALL);
+        priceLabel.setForeground(UIConstants.ACCENT_RED);
+
+        JLabel statusLabel = new JLabel(room.isAvailable() ? "Available" : "Occupied");
+        statusLabel.setFont(UIConstants.FONT_SMALL);
+        statusLabel.setForeground(room.isAvailable() ? UIConstants.ACCENT_GREEN : UIConstants.ACCENT_RED);
+
+        statusPanel.add(priceLabel, BorderLayout.WEST);
+        statusPanel.add(statusLabel, BorderLayout.EAST);
+
+        infoPanel.add(numberLabel);
+        infoPanel.add(typeLabel);
+        infoPanel.add(statusPanel);
+
+        card.add(infoPanel, BorderLayout.CENTER);
+
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        actionPanel.setOpaque(false);
+        actionPanel.setBorder(new EmptyBorder(5, 0, 0, 0));
+
+        JButton editBtn = new JButton("✏️");
+        editBtn.setFont(UIConstants.FONT_SMALL);
+        editBtn.setBackground(UIConstants.BG_INPUT);
+        editBtn.setForeground(UIConstants.TEXT_PRIMARY);
+        editBtn.setFocusPainted(false);
+        editBtn.setBorder(BorderFactory.createLineBorder(UIConstants.BORDER));
+        editBtn.setPreferredSize(new Dimension(32, 28));
+
+        JButton deleteBtn = new JButton("🗑️");
+        deleteBtn.setFont(UIConstants.FONT_SMALL);
+        deleteBtn.setBackground(UIConstants.BG_INPUT);
+        
+        deleteBtn.setForeground(UIConstants.ACCENT_RED);
+        deleteBtn.setFocusPainted(false);
+        deleteBtn.setBorder(BorderFactory.createLineBorder(UIConstants.BORDER));
+        deleteBtn.setPreferredSize(new Dimension(32, 28));
+
+        actionPanel.add(editBtn);
+        actionPanel.add(deleteBtn);
+        card.add(actionPanel, BorderLayout.SOUTH);
+
+        return card;
     }
 }

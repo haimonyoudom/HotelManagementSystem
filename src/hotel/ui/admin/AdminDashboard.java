@@ -1,226 +1,153 @@
 package hotel.ui.admin;
 
+import hotel.ui.util.UIConstants;
+
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
-import java.awt.event.*;
 
-public class AdminDashboard {
+public class AdminDashboard extends JFrame {
+    private JPanel contentPanel;
+    private CardLayout cardLayout;
+    private JButton[] navButton;
 
-    // ── Declare all panels here so buttons can access them ──
-    static JPanel sidebarPanel;
-    static ManageRoomsPanel roomsPanel;
-    // static ManageCustomersPanel customersPanel;
-    // static ManageStaffPanel staffPanel;
-    // static IncomeReportPanel incomePanel;
-    static JPanel currentContentPanel;
+    private static final String DASHBOARD = "DASHBOARD";
+    private static final String ROOMS = "ROOMS";
+    private static final String CUSTOMERS = "CUSTOMERS";
+    private static final String STAFF = "STAFF";
+    private static final String REPORTS = "REPORTS";
 
-    // ── Colors matching your dark theme screenshot ──
-    static final Color BG_DARK = new Color(18, 18, 18);
-    static final Color BG_CARD = new Color(28, 28, 28);
-    static final Color BG_HOVER = new Color(40, 40, 40);
-    static final Color ACCENT_RED = new Color(200, 50, 50);
-    static final Color TEXT_WHITE = new Color(240, 240, 240);
-    static final Color TEXT_GRAY = new Color(150, 150, 150);
-    static final Color BORDER_COLOR = new Color(50, 50, 50);
+    public AdminDashboard() {
+        setTitle ("Hotel Management System - Admin");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1400, 900);
+        setLocationRelativeTo(null);
 
-    // ── Frame dimensions ──
-    static final int FRAME_WIDTH = 1400;
-    static final int FRAME_HEIGHT = 900;
-    static final int SIDEBAR_WIDTH = 220;
-    static final int CONTENT_X = SIDEBAR_WIDTH;
-    static final int CONTENT_WIDTH = FRAME_WIDTH - SIDEBAR_WIDTH;
+        getContentPane().setBackground(UIConstants.BG_DARK);
+        setLayout(new BorderLayout());
 
-    public static void main(String[] args) {
+        JPanel sidebar = createSidebar();
+        add(sidebar, BorderLayout.WEST);
 
-        // ── Create the Window ──────────────────────────────────────────
-        JFrame frame = new JFrame("HMS - Hotel Management System");
-        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-        frame.setLayout(null);
-        frame.setResizable(false);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.getContentPane().setBackground(BG_DARK);
+        cardLayout   = new CardLayout();
+        contentPanel = new JPanel(cardLayout);
+        contentPanel.setBackground(UIConstants.BG_DARK);
 
-        // ── Create Sidebar Panel ─────────────────────────────────────
-        sidebarPanel = createSidebar();
-        frame.add(sidebarPanel);
+        contentPanel.add(new AdminDashboardPanel(), DASHBOARD);
+        contentPanel.add(new ManageRoomsPanel(), ROOMS);
+        // contentPanel.add(new ManageCustomerPanel(), CUSTOMERS);
+        // contentPanel.add(new ManageStaffPanel(), STAFF);
+        // contentPanel.add(new IncomeReportPanel(), REPORTS);
 
-        // ── Create Content Panels (Screens) ───────────────────────────
-        roomsPanel = new ManageRoomsPanel();
-        roomsPanel.setBounds(CONTENT_X, 0, CONTENT_WIDTH, FRAME_HEIGHT);
-
-        // customersPanel = new ManageCustomersPanel();
-        // customersPanel.setBounds(CONTENT_X, 0, CONTENT_WIDTH, FRAME_HEIGHT);
-
-        // staffPanel = new ManageStaffPanel();
-        // staffPanel.setBounds(CONTENT_X, 0, CONTENT_WIDTH, FRAME_HEIGHT);
-
-        // incomePanel = new IncomeReportPanel();
-        // incomePanel.setBounds(CONTENT_X, 0, CONTENT_WIDTH, FRAME_HEIGHT);
-
-        // ── Add all content panels to frame ───────────────────────────
-        frame.add(roomsPanel);
-        // frame.add(customersPanel);
-        // frame.add(staffPanel);
-        // frame.add(incomePanel);
-
-        // ── Show only Rooms screen at the start ─────────────────────
-        roomsPanel.setVisible(true);
-        // customersPanel.setVisible(false);
-        // staffPanel.setVisible(false);
-        // incomePanel.setVisible(false);
-        // currentContentPanel = roomsPanel;
-
-        frame.setVisible(true);
+        add(contentPanel, BorderLayout.CENTER);
+        showPanel(DASHBOARD, 0);
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // SIDEBAR CREATION
-    // ═══════════════════════════════════════════════════════════════
-    static JPanel createSidebar() {
-        JPanel panel = new JPanel();
-        panel.setLayout(null);
-        panel.setBounds(0, 0, SIDEBAR_WIDTH, FRAME_HEIGHT);
-        panel.setBackground(BG_DARK);
-        panel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER_COLOR));
+    private JPanel createSidebar() {
+        JPanel sidebar = new JPanel();
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setBackground(UIConstants.BG_SIDEBAR);
+        sidebar.setPreferredSize(new Dimension(UIConstants.SIDEBAR_WIDTH, 0));
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIConstants.BORDER));
 
-        // HMS Title
-        JLabel hmsTitle = new JLabel("HMS");
-        hmsTitle.setBounds(20, 20, 180, 30);
-        hmsTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        hmsTitle.setForeground(TEXT_WHITE);
-        panel.add(hmsTitle);
+        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15));
+        logoPanel.setBackground(UIConstants.BG_SIDEBAR);
+        logoPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+        logoPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIConstants.BORDER));
+        logoPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Subtitle
-        JLabel hmsSub = new JLabel("Hotel Management System");
-        hmsSub.setBounds(20, 50, 180, 20);
-        hmsSub.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        hmsSub.setForeground(TEXT_GRAY);
-        panel.add(hmsSub);
+        JLabel logoLabel = new JLabel("HMS Admin");
+        logoLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        logoLabel.setForeground(UIConstants.ACCENT_RED);
+        logoPanel.add(logoLabel);
 
-        // Navigation Items
-        String[] items = {"Dashboard", "Rooms", "Customers", "Staff", "Reports"};
-        String[] icons = {"◈", "◈", "◈", "◈", "◈"};
-        int yPos = 120;
+        sidebar.add(logoPanel);
+        sidebar.add(Box.createVerticalStrut(10));
 
-        for (int i = 0; i < items.length; i++) {
-            final String item = items[i];
-            final int index = i;
-
-            JPanel navItem = new JPanel();
-            navItem.setLayout(null);
-            navItem.setBounds(10, yPos, 200, 45);
-            navItem.setBackground(index == 1 ? new Color(60, 30, 30) : BG_DARK);
-            navItem.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-            // Left accent bar for selected
-            if (index == 1) {
-                JPanel accent = new JPanel();
-                accent.setBounds(0, 0, 3, 45);
-                accent.setBackground(ACCENT_RED);
-                navItem.add(accent);
-            }
-
-            JLabel iconLabel = new JLabel(icons[i]);
-            iconLabel.setBounds(15, 12, 25, 20);
-            iconLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            iconLabel.setForeground(index == 1 ? ACCENT_RED : TEXT_GRAY);
-            navItem.add(iconLabel);
-
-            JLabel textLabel = new JLabel(item);
-            textLabel.setBounds(45, 12, 140, 20);
-            textLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            textLabel.setForeground(index == 1 ? TEXT_WHITE : TEXT_GRAY);
-            navItem.add(textLabel);
-
-            // Hover effects
-            navItem.addMouseListener(new MouseAdapter() {
-                public void mouseEntered(MouseEvent e) {
-                    if (currentContentPanel != getPanelForItem(item)) {
-                        navItem.setBackground(BG_HOVER);
-                    }
-                }
-                public void mouseExited(MouseEvent e) {
-                    if (currentContentPanel != getPanelForItem(item)) {
-                        navItem.setBackground(BG_DARK);
-                    }
-                }
-                public void mouseClicked(MouseEvent e) {
-                    switchToPanel(item);
-                }
-            });
-
-            panel.add(navItem);
-            yPos += 55;
-        }
-
-        // Bottom section - Staff info
-        JPanel staffSection = new JPanel();
-        staffSection.setLayout(null);
-        staffSection.setBounds(10, FRAME_HEIGHT - 120, 200, 100);
-        staffSection.setBackground(BG_CARD);
-        staffSection.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
-
-        JLabel staffLabel = new JLabel("Staff");
-        staffLabel.setBounds(15, 10, 100, 20);
-        staffLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        staffLabel.setForeground(TEXT_GRAY);
-        staffSection.add(staffLabel);
-
-        // Staff avatar circle
-        JPanel avatar = new JPanel() {
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(ACCENT_RED);
-                g2d.fillOval(0, 0, 36, 36);
-                g2d.setColor(TEXT_WHITE);
-                g2d.setFont(new Font("Segoe UI", Font.BOLD, 14));
-                FontMetrics fm = g2d.getFontMetrics();
-                String text = "S";
-                int textX = (36 - fm.stringWidth(text)) / 2;
-                int textY = ((36 - fm.getHeight()) / 2) + fm.getAscent();
-                g2d.drawString(text, textX, textY);
-            }
+        String[][] navItems = {
+            {"Dashboard", DASHBOARD},
+            {"Rooms", ROOMS},
+            {"Customers", CUSTOMERS},
+            {"Staff", STAFF},
+            {"Reports", REPORTS}
         };
-        avatar.setBounds(15, 40, 36, 36);
-        avatar.setOpaque(false);
-        staffSection.add(avatar);
 
-        JLabel staffName = new JLabel("Admin User");
-        staffName.setBounds(60, 42, 130, 18);
-        staffName.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        staffName.setForeground(TEXT_WHITE);
-        staffSection.add(staffName);
+        navButton = new JButton[navItems.length];
 
-        JLabel staffRole = new JLabel("Manager");
-        staffRole.setBounds(60, 60, 130, 16);
-        staffRole.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        staffRole.setForeground(TEXT_GRAY);
-        staffSection.add(staffRole);
+        for (int i = 0; i < navItems.length; i++) {
+            final int index = i;
+            String text = navItems[i][0];
+            String panelName = navItems[i][1];
 
-        panel.add(staffSection);
-
-        return panel;
-    }
-
-    static JPanel getPanelForItem(String item) {
-        switch(item) {
-            case "Rooms": return roomsPanel;
-            // case "Customers": return customersPanel;
-            // case "Staff": return staffPanel;
-            // case "Reports": return incomePanel;
-            default: return roomsPanel;
+            JButton btn = createNavButton(text);
+            navButton[i] = btn;
+            btn.addActionListener(e -> showPanel(panelName, index));
+            sidebar.add(btn);
+            sidebar.add(Box.createVerticalStrut(2));
         }
+
+        sidebar.add(Box.createVerticalGlue());
+
+        JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        userPanel.setBackground(UIConstants.BG_SIDEBAR);
+        userPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        userPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, UIConstants.BORDER));
+        userPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel userLabel = new JLabel ("👤 Admin");
+        userLabel.setFont(UIConstants.FONT_SMALL);
+        userLabel.setForeground(UIConstants.TEXT_SECONDARY);
+        userPanel.add(userLabel);
+
+        sidebar.add(userPanel);
+
+        return sidebar;
     }
 
-    static void switchToPanel(String item) {
-        JPanel target = getPanelForItem(item);
-        if (target == currentContentPanel) return;
+    private JButton createNavButton(String text) {
+        JButton btn = new JButton(text);
+        btn.setFont(UIConstants.FONT_BODY);
+        btn.setForeground(UIConstants.TEXT_SECONDARY);
+        btn.setBackground(UIConstants.BG_SIDEBAR);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btn.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
 
-        currentContentPanel.setVisible(false);
-        target.setVisible(true);
-        currentContentPanel = target;
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                if (btn.getBackground().equals(UIConstants.BG_SIDEBAR)) {
+                    btn.setBackground(UIConstants.BG_SIDEBAR_HOVER);
+                    btn.setForeground(UIConstants.TEXT_PRIMARY);
+                }
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                if (!btn.getBackground().equals(UIConstants.BG_SIDEBAR_ACTIVE)) {
+                    btn.setBackground(UIConstants.BG_SIDEBAR);
+                    btn.setForeground(UIConstants.TEXT_SECONDARY);
+                }
+            }
+        });
+
+        return btn;
+    }
+
+    private void showPanel(String name, int activeIndex) {
+        cardLayout.show(contentPanel, name);
+
+        for (int i = 0; i < navButton.length; i++) {
+            if (i == activeIndex) {
+                navButton[i].setBackground(UIConstants.BG_SIDEBAR_ACTIVE);
+                navButton[i].setForeground(UIConstants.TEXT_SECONDARY);
+                navButton[i].setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, UIConstants.ACCENT_RED),
+                                       BorderFactory.createEmptyBorder(0, 17, 0, 0)));
+            } else {
+                navButton[i].setBackground(UIConstants.BG_SIDEBAR);
+                navButton[i].setForeground(UIConstants.TEXT_SECONDARY);
+                navButton[i].setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
+            }
+        }
     }
 }
