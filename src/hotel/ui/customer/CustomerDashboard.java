@@ -21,9 +21,9 @@ public class CustomerDashboard {
 
     // ── Palette ────────────────────────────────────────────────────────
 static final Color BG_MAIN       = new Color(18, 18, 18);   // BG_DARK — app root
-static final Color BG_SIDEBAR    = new Color(13, 13, 30);   // dark navy sidebar
+static final Color BG_SIDEBAR    = new Color(18, 18, 18);   // dark navy sidebar
 static final Color BG_TOPBAR     = new Color(18, 18, 18);   // BG_DARK — topbar
-static final Color BG_CARD       = new Color(20, 20, 40);   // dark navy card
+static final Color BG_CARD       = new Color(18, 18, 18);   // dark navy card
 static final Color BG_ELEVATED   = new Color(22, 22, 50);   // welcome banner
 static final Color BG_CONTENT    = new Color(18, 18, 18);   // BG_DARK — content area
 static final Color BG_ROW        = new Color(28, 28, 50);   // booking row bg
