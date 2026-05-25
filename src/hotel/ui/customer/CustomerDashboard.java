@@ -251,20 +251,7 @@ static final Color BORDER_BLUE   = new Color(37, 99, 235);   // blue content bor
     // SCREEN 3 — BOOKING  (placeholder — your teammate fills this)
     // =========================================================================
     public static void buildBookingPanel() {
-        addTopbar(bookingPanel, "Bookings", "Create or manage your booking");
-        addSidebar(bookingPanel, "booking");
-
-        JPanel content = makeRoundPanel(BG_CONTENT);
-        content.setLayout(null);
-        content.setBounds(CONTENT_X + 14, CONTENT_Y + 14, CONTENT_W - 28, CONTENT_H - 28);
-        content.setBorder(BorderFactory.createLineBorder(BORDER_BLUE, 1));
-        bookingPanel.add(content);
-
-        JLabel lbl = new JLabel("Booking panel — coming soon.");
-        lbl.setBounds(24, 24, 400, 24);
-        lbl.setFont(F_MED);
-        lbl.setForeground(TXT_PRIMARY);
-        content.add(lbl);
+        BookingPanel.build(bookingPanel);
     }
 
     // =========================================================================
