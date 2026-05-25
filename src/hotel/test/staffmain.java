@@ -6,40 +6,26 @@ import hotel.ui.common.LoginFrame;
 
 public class staffmain {
     public static void main(String[] args) {
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        LoginFrame.screenWidth = screenSize.width;
-        LoginFrame.screenHeight = screenSize.height;
-        LoginFrame.scaleX = screenSize.width / 980.0;
-        LoginFrame.scaleY = screenSize.height / 760.0;
-        LoginFrame.leftPanelWidth = (int) (screenSize.width * 0.46);
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Hotel Management System");
+            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setLayout(new CardLayout());
 
-        JFrame frame = new JFrame("Hotel Management System");
-        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        frame.setLayout(null);
-        frame.setResizable(true);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            LoginFrame.loginPanel = new JPanel();
+            LoginFrame.signupPanel = new JPanel();
 
-        LoginFrame.loginPanel = new JPanel();
-        LoginFrame.loginPanel.setLayout(null);
-        LoginFrame.loginPanel.setBounds(0, 0, LoginFrame.screenWidth, LoginFrame.screenHeight);
-        LoginFrame.loginPanel.setBackground(Color.WHITE);
+            LoginFrame.buildLoginScreen();
+            LoginFrame.buildSignupScreen();
 
-        LoginFrame.signupPanel = new JPanel();
-        LoginFrame.signupPanel.setLayout(null);
-        LoginFrame.signupPanel.setBounds(0, 0, LoginFrame.screenWidth, LoginFrame.screenHeight);
-        LoginFrame.signupPanel.setBackground(Color.WHITE);
+            frame.add(LoginFrame.loginPanel, "login");
+            frame.add(LoginFrame.signupPanel, "signup");
 
-        LoginFrame.buildLoginScreen();
-        LoginFrame.buildSignupScreen();
+            LoginFrame.loginPanel.setVisible(true);
+            LoginFrame.signupPanel.setVisible(false);
 
-        frame.add(LoginFrame.loginPanel);
-        frame.add(LoginFrame.signupPanel);
-
-        LoginFrame.loginPanel.setVisible(true);
-        LoginFrame.signupPanel.setVisible(false);
-
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
     }
 }
