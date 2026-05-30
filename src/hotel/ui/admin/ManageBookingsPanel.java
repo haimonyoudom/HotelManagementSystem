@@ -1,7 +1,7 @@
 package hotel.ui.admin;
 
-import hotel.dao.RoomDAO;
-import hotel.model.Room;
+import hotel.dao.BookingDAO;
+import hotel.model.Booking;
 import hotel.ui.common.UITheme;
 
 import javax.swing.*;
@@ -9,11 +9,11 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-public class ManageRoomsPanel extends JPanel {
-    private final RoomDAO roomDAO = new RoomDAO();
+public class ManageBookingsPanel extends JPanel {
+    private final BookingDAO bookingDAO = new BookingDAO();
 
     private final DefaultTableModel tableModel = new DefaultTableModel(
-            new Object[]{"ID", "Room Number", "Type", "Price/Night", "Available"}, 0
+            new Object[]{"ID", "Customer ID", "Room ID", "Check In", "Check Out", "Total Price", "Status"}, 0
     ) {
         @Override
         public boolean isCellEditable(int row, int column) {
@@ -23,7 +23,7 @@ public class ManageRoomsPanel extends JPanel {
 
     private final JTable table = new JTable(tableModel);
 
-    public ManageRoomsPanel() {
+    public ManageBookingsPanel() {
         setLayout(new BorderLayout(16, 16));
         setBackground(UITheme.BG);
         setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
@@ -31,9 +31,9 @@ public class ManageRoomsPanel extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         actions.setOpaque(false);
 
-        JButton addBtn = UITheme.primaryButton("Add Room");
-        JButton editBtn = UITheme.secondaryButton("Edit Room");
-        JButton deleteBtn = UITheme.dangerButton("Delete Room");
+        JButton addBtn = UITheme.primaryButton("Add Booking");
+        JButton editBtn = UITheme.secondaryButton("Edit Booking");
+        JButton deleteBtn = UITheme.dangerButton("Delete Booking");
         JButton refreshBtn = UITheme.secondaryButton("Refresh");
 
         actions.add(addBtn);
@@ -59,19 +59,21 @@ public class ManageRoomsPanel extends JPanel {
         try {
             tableModel.setRowCount(0);
 
-            List<Room> rooms = roomDAO.getAll();
+            List<Booking> bookings = bookingDAO.getAll();
 
-            for (Room room : rooms) {
+            for (Booking booking : bookings) {
                 tableModel.addRow(new Object[]{
-                        room.getId(),
-                        room.getRoomNumber(),
-                        room.getType(),
-                        room.getPricePerNight(),
-                        room.isAvailable()
+                        booking.getId(),
+                        booking.getCustomerId(),
+                        booking.getRoomId(),
+                        booking.getCheckInDate(),
+                        booking.getCheckOutDate(),
+                        booking.getTotalPrice(),
+                        booking.getStatus()
                 });
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Failed to load rooms: " + ex.getMessage(),
+            JOptionPane.showMessageDialog(this, "Failed to load bookings: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -80,24 +82,24 @@ public class ManageRoomsPanel extends JPanel {
         int row = table.getSelectedRow();
 
         if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a room first.");
+            JOptionPane.showMessageDialog(this, "Please select a booking first.");
             return;
         }
 
         int id = (int) tableModel.getValueAt(row, 0);
 
         try {
-            Room room = roomDAO.getById(id);
+            Booking booking = bookingDAO.getById(id);
 
-            if (room == null) {
-                JOptionPane.showMessageDialog(this, "Room not found.");
+            if (booking == null) {
+                JOptionPane.showMessageDialog(this, "Booking not found.");
                 reload();
                 return;
             }
 
-            openDialog(room);
+            openDialog(booking);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Failed to load room: " + ex.getMessage(),
+            JOptionPane.showMessageDialog(this, "Failed to load booking: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -106,14 +108,14 @@ public class ManageRoomsPanel extends JPanel {
         int row = table.getSelectedRow();
 
         if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a room first.");
+            JOptionPane.showMessageDialog(this, "Please select a booking first.");
             return;
         }
 
         int id = (int) tableModel.getValueAt(row, 0);
 
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Delete room #" + id + "?",
+                "Delete booking #" + id + "?",
                 "Confirm Delete",
                 JOptionPane.YES_NO_OPTION);
 
@@ -122,36 +124,35 @@ public class ManageRoomsPanel extends JPanel {
         }
 
         try {
-            roomDAO.delete(id);
+            bookingDAO.delete(id);
             reload();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Failed to delete room: " + ex.getMessage(),
+            JOptionPane.showMessageDialog(this, "Failed to delete booking: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void openDialog(Room editing) {
-        boolean addMode = editing == null;
-
+    private void openDialog(Booking editing) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
-                addMode ? "Add Room" : "Edit Room", true);
+                editing == null ? "Add Booking" : "Edit Booking", true);
 
         JPanel root = UITheme.pagePanel();
         JPanel form = UITheme.cardPanel(new GridBagLayout());
 
-        JTextField roomNumberField = UITheme.textField();
-        JComboBox<String> typeBox = UITheme.comboBox("Standard", "Deluxe", "Suite", "Family");
-        JTextField priceField = UITheme.textField();
-        JCheckBox availableBox = new JCheckBox("Available");
-
-        availableBox.setOpaque(false);
-        availableBox.setSelected(true);
+        JTextField customerIdField = UITheme.textField();
+        JTextField roomIdField = UITheme.textField();
+        JTextField checkInField = UITheme.textField();
+        JTextField checkOutField = UITheme.textField();
+        JTextField totalPriceField = UITheme.textField();
+        JComboBox<String> statusBox = UITheme.comboBox("pending", "confirmed", "checked_in", "checked_out", "cancelled");
 
         if (editing != null) {
-            roomNumberField.setText(editing.getRoomNumber());
-            typeBox.setSelectedItem(editing.getType());
-            priceField.setText(String.valueOf(editing.getPricePerNight()));
-            availableBox.setSelected(editing.isAvailable());
+            customerIdField.setText(String.valueOf(editing.getCustomerId()));
+            roomIdField.setText(String.valueOf(editing.getRoomId()));
+            checkInField.setText(editing.getCheckInDate());
+            checkOutField.setText(editing.getCheckOutDate());
+            totalPriceField.setText(String.valueOf(editing.getTotalPrice()));
+            statusBox.setSelectedItem(editing.getStatus());
         }
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -160,10 +161,12 @@ public class ManageRoomsPanel extends JPanel {
         gbc.weightx = 1;
 
         int y = 0;
-        addRow(form, gbc, y++, "Room Number", roomNumberField);
-        addRow(form, gbc, y++, "Type", typeBox);
-        addRow(form, gbc, y++, "Price Per Night", priceField);
-        addRow(form, gbc, y++, "Status", availableBox);
+        addRow(form, gbc, y++, "Customer ID", customerIdField);
+        addRow(form, gbc, y++, "Room ID", roomIdField);
+        addRow(form, gbc, y++, "Check In Date", checkInField);
+        addRow(form, gbc, y++, "Check Out Date", checkOutField);
+        addRow(form, gbc, y++, "Total Price", totalPriceField);
+        addRow(form, gbc, y++, "Status", statusBox);
 
         JButton saveBtn = UITheme.primaryButton("Save");
         JButton cancelBtn = UITheme.secondaryButton("Cancel");
@@ -182,44 +185,39 @@ public class ManageRoomsPanel extends JPanel {
         dialog.add(root);
 
         saveBtn.addActionListener(ignored -> {
-            String roomNumber = roomNumberField.getText().trim();
-            String priceText = priceField.getText().trim();
-
-            if (roomNumber.isBlank() || priceText.isBlank()) {
-                JOptionPane.showMessageDialog(dialog, "Room number and price are required.",
-                        "Validation", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
             try {
-                double price = Double.parseDouble(priceText);
+                int customerId = Integer.parseInt(customerIdField.getText().trim());
+                int roomId = Integer.parseInt(roomIdField.getText().trim());
+                double totalPrice = Double.parseDouble(totalPriceField.getText().trim());
 
-                Room room = addMode ? new Room() : editing;
-                room.setRoomNumber(roomNumber);
-                room.setType(String.valueOf(typeBox.getSelectedItem()));
-                room.setPricePerNight(price);
-                room.setAvailable(availableBox.isSelected());
+                Booking booking = editing == null ? new Booking() : editing;
+                booking.setCustomerId(customerId);
+                booking.setRoomId(roomId);
+                booking.setCheckInDate(checkInField.getText().trim());
+                booking.setCheckOutDate(checkOutField.getText().trim());
+                booking.setTotalPrice(totalPrice);
+                booking.setStatus(String.valueOf(statusBox.getSelectedItem()));
 
-                if (addMode) {
-                    roomDAO.add(room);
+                if (editing == null) {
+                    bookingDAO.add(booking);
                 } else {
-                    roomDAO.update(room);
+                    bookingDAO.update(booking);
                 }
 
                 dialog.dispose();
                 reload();
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(dialog, "Price must be a valid number.",
+                JOptionPane.showMessageDialog(dialog, "Customer ID, Room ID and Total Price must be valid numbers.",
                         "Validation", JOptionPane.WARNING_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Failed to save room: " + ex.getMessage(),
+                JOptionPane.showMessageDialog(dialog, "Failed to save booking: " + ex.getMessage(),
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
         cancelBtn.addActionListener(ignored -> dialog.dispose());
 
-        dialog.setSize(520, 420);
+        dialog.setSize(520, 520);
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
     }
@@ -229,10 +227,12 @@ public class ManageRoomsPanel extends JPanel {
         gbc.gridy = y;
         gbc.gridwidth = 1;
         gbc.weightx = 0;
+
         form.add(new JLabel(label), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1;
+
         form.add(input, gbc);
     }
 }
