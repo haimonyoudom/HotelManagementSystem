@@ -35,6 +35,10 @@ public class DBInitializer {
         }
     }
 
+    public static void initializeDatabase() throws SQLException {
+        initialize();
+    }
+
     public static boolean tableExists(String tableName) {
         String sql = "SELECT 1 FROM sqlite_master WHERE type='table' AND lower(name)=lower(?) LIMIT 1";
         try (Connection conn = DBConnection.getConnection();

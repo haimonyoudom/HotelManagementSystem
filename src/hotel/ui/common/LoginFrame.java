@@ -1,9 +1,19 @@
 package hotel.ui.common;
 
+import hotel.service.AuthService;
+import hotel.dao.UserDAO;
+import hotel.model.User;
+import hotel.util.PasswordHasher;
+import hotel.ui.customer.CustomerDashboard;
+import hotel.ui.admin.AdminDashboard;
+import hotel.config.DBInitializer;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class LoginFrame {
 
@@ -12,34 +22,60 @@ public class LoginFrame {
     static JLabel loginStatus;
     static JLabel signupStatus;
 
+    // ── Light Mode Palette ─────────────────────────────────────────────────
+    static final Color BG_MAIN       = new Color(250, 250, 250);
+    static final Color BG_CARD       = new Color(255, 255, 255);
+    static final Color BG_ELEVATED   = new Color(235, 241, 255);
+    static final Color TXT_PRIMARY   = new Color(20, 20, 20);
+    static final Color TXT_SECONDARY = new Color(90, 90, 90);
+    static final Color BLUE          = new Color(59, 130, 246);
+    static final Color BORDER        = new Color(220, 220, 220);
+
+    static final Font F_TITLE = new Font("Segoe UI", Font.BOLD,  18);
+    static final Font F_REG   = new Font("Segoe UI", Font.PLAIN, 13);
+    static final Font F_SMALL = new Font("Segoe UI", Font.PLAIN, 11);
+
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Hotel Management System");
+        try {
+            DBInitializer.initializeDatabase();
+        } catch (SQLException e) {
+            System.err.println("Database initialization failed: " + e.getMessage());
+            JOptionPane.showMessageDialog(null, "Database initialization error", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+        try { UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); }
+        catch (Exception ignored) {}
+
+        JFrame frame = new JFrame("Hotel Management System - Login");
         frame.setSize(980, 760);
         frame.setLayout(null);
         frame.setResizable(false);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.getContentPane().setBackground(BG_MAIN);
 
         loginPanel = new JPanel();
         signupPanel = new JPanel();
 
         loginPanel.setLayout(null);
         loginPanel.setBounds(0, 0, 980, 760);
-        loginPanel.setBackground(Color.WHITE);
+        loginPanel.setBackground(BG_MAIN);
 
         signupPanel.setLayout(null);
         signupPanel.setBounds(0, 0, 980, 760);
-        signupPanel.setBackground(Color.WHITE);
+        signupPanel.setBackground(BG_MAIN);
 
         // Login right background
         JPanel loginRightBg = new JPanel();
         loginRightBg.setBounds(450, 0, 530, 760);
-        loginRightBg.setBackground(Color.WHITE);
+        loginRightBg.setBackground(BG_CARD);
+        loginRightBg.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, BORDER));
         loginPanel.add(loginRightBg);
 
         // Signup right background
         JPanel signupRightBg = new JPanel();
         signupRightBg.setBounds(450, 0, 530, 760);
-        signupRightBg.setBackground(Color.WHITE);
+        signupRightBg.setBackground(BG_CARD);
+        signupRightBg.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, BORDER));
         signupPanel.add(signupRightBg);
 
         frame.add(loginPanel);
@@ -57,9 +93,9 @@ public class LoginFrame {
 
     private static void buildLoginScreen() {
         JLabel title = new JLabel("Hotel Management System");
-        title.setBounds(46, 30, 500, 48);
         title.setFont(new Font("Arial", Font.BOLD, 32));
         title.setForeground(new Color(20, 33, 61));
+        title.setBounds(46, 30, 500, 48);
         loginPanel.add(title);
 
         JLabel subtitle = new JLabel("Sign in to your dashboard");
@@ -73,7 +109,7 @@ public class LoginFrame {
         accent.setBackground(new Color(15, 84, 175));
         loginPanel.add(accent);
 
-        JLabel emailLabel = new JLabel("Email");
+        JLabel emailLabel = new JLabel("Username");
         emailLabel.setBounds(60, 160, 180, 24);
         emailLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         loginPanel.add(emailLabel);
@@ -109,8 +145,6 @@ public class LoginFrame {
         signinButton.setBorder(null);
         signinButton.setBorder(BorderFactory.createEmptyBorder());
         signinButton.setFocusPainted(false);
-        // Add this:
-        signinButton.putClientProperty("JButton.buttonType", "roundRect");
         loginPanel.add(signinButton);
 
         loginStatus = new JLabel(" ");
@@ -139,14 +173,32 @@ public class LoginFrame {
         signinButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String email = emailField.getText().trim();
+                String username = emailField.getText().trim();
                 String password = new String(passwordField.getPassword());
-                if (email.isEmpty() || password.isEmpty()) {
-                    loginStatus.setText("Please enter email and password.");
+                if (username.isEmpty() || password.isEmpty()) {
+                    loginStatus.setForeground(new Color(170, 34, 62));
+                    loginStatus.setText("Please enter username and password.");
                     return;
                 }
-                loginStatus.setForeground(new Color(15, 84, 175));
-                loginStatus.setText("Signed in successfully (demo mode). Welcome back!");
+                try {
+                    AuthService authService = new AuthService();
+                    boolean success = authService.login(username, password);
+                    if (success) {
+                        User user = authService.getCurrentUser();
+                        loginStatus.setForeground(new Color(15, 84, 175));
+                        loginStatus.setText("Signed in successfully. Welcome back!");
+                        new Thread(() -> {
+                            try { Thread.sleep(800); } catch (InterruptedException ignored) {}
+                            openDashboard(user);
+                        }).start();
+                    } else {
+                        loginStatus.setForeground(new Color(170, 34, 62));
+                        loginStatus.setText("Invalid username or password.");
+                    }
+                } catch (Exception ex) {
+                    loginStatus.setForeground(new Color(170, 34, 62));
+                    loginStatus.setText("Login error: " + ex.getMessage());
+                }
             }
         });
 
@@ -179,7 +231,7 @@ public class LoginFrame {
         accent.setBackground(new Color(15, 84, 175));
         signupPanel.add(accent);
 
-        JLabel emailLabel = new JLabel("Email");
+        JLabel emailLabel = new JLabel("Username");
         emailLabel.setBounds(60, 130, 180, 24);
         emailLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         signupPanel.add(emailLabel);
@@ -226,7 +278,7 @@ public class LoginFrame {
         roleLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         signupPanel.add(roleLabel);
 
-        JComboBox<String> roleDropdown = new JComboBox<>(new String[] { "  ....", "  Customer", "  Staff" });
+        JComboBox<String> roleDropdown = new JComboBox<>(new String[] { "----", "Customer", "Staff" });
         roleDropdown.setBounds(60, 424, 200, 35);
         roleDropdown.setFont(new Font("Arial", Font.PLAIN, 14));
         roleDropdown.setBackground(new Color(250, 251, 253));
@@ -240,7 +292,6 @@ public class LoginFrame {
         createButton.setBorder(null);
         createButton.setBorder(BorderFactory.createEmptyBorder());
         createButton.setFocusPainted(false);
-        createButton.putClientProperty("JButton.buttonType", "roundRect");
         signupPanel.add(createButton);
 
         signupStatus = new JLabel(" ");
@@ -252,9 +303,6 @@ public class LoginFrame {
         JPanel signupFooter = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
         signupFooter.setBounds(60, 548, 360, 24);
         signupFooter.setOpaque(false);
-        signupStatus.setFont(new Font("Arial", Font.PLAIN, 13));
-        signupStatus.setForeground(new Color(170, 34, 62));
-        signupPanel.add(signupStatus);
 
         JLabel alreadyText = new JLabel("Already have an account? ");
         alreadyText.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -275,9 +323,9 @@ public class LoginFrame {
                 String email = emailField.getText().trim();
                 String password = new String(passwordField.getPassword());
                 String confirm = new String(confirmField.getPassword());
-                String role = (String) roleDropdown.getSelectedItem();
+                String role = ((String) roleDropdown.getSelectedItem()).trim();
 
-                if (email.isEmpty() || password.isEmpty() || confirm.isEmpty() || role.equals("...")) {
+                if (email.isEmpty() || password.isEmpty() || confirm.isEmpty() || role.equals("----")) {
                     signupStatus.setForeground(new Color(170, 34, 62));
                     signupStatus.setText("Please fill in all fields.");
                     return;
@@ -287,8 +335,26 @@ public class LoginFrame {
                     signupStatus.setText("Passwords do not match.");
                     return;
                 }
-                signupStatus.setForeground(new Color(15, 84, 175));
-                signupStatus.setText("Account created successfully. You can sign in now.");
+                try {
+                    String hashedPassword = PasswordHasher.hash(password);
+                    String createdAt = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    User newUser = new User(0, email, hashedPassword, role, createdAt);
+                    UserDAO userDAO = new UserDAO();
+                    userDAO.add(newUser);
+                    signupStatus.setForeground(new Color(15, 84, 175));
+                    signupStatus.setText("Account created! You can sign in now.");
+                    emailField.setText("");
+                    passwordField.setText("");
+                    confirmField.setText("");
+                    roleDropdown.setSelectedIndex(0);
+                } catch (SQLException ex) {
+                    signupStatus.setForeground(new Color(170, 34, 62));
+                    if (ex.getMessage().contains("UNIQUE")) {
+                        signupStatus.setText("Username already exists.");
+                    } else {
+                        signupStatus.setText("Error creating account: " + ex.getMessage());
+                    }
+                }
             }
         });
 
@@ -303,9 +369,18 @@ public class LoginFrame {
         buildIllustrationPanel(signupPanel);
     }
 
+    private static void openDashboard(User user) {
+        if ("Customer".equalsIgnoreCase(user.getRole())) {
+            new Thread(() -> CustomerDashboard.main(new String[]{})).start();
+        } else {
+            new Thread(() -> AdminDashboard.main(new String[]{})).start();
+        }
+        SwingUtilities.getWindowAncestor(loginPanel).dispose();
+    }
+
     private static void buildIllustrationPanel(JPanel parent) {
         JPanel imagePanel = new JPanel();
-        imagePanel.setBounds(610, 80, 320, 520);
+        imagePanel.setBounds(460, 0, 520, 760);
         imagePanel.setBackground(new Color(245, 248, 252));
         imagePanel.setLayout(null);
 
@@ -314,8 +389,6 @@ public class LoginFrame {
                 "src/hotel/images/resources/hotel2.jpg",
                 "src/hotel/images/resources/hotel3.jpg"
         };
-
-        imagePanel.setBounds(460, 0, 520, 760);
 
         int[] xPositions = { 50, 200, 350 };
         int[] yPositions = { 120, 80, 40 };
@@ -343,22 +416,15 @@ public class LoginFrame {
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                     g2.setClip(new java.awt.geom.RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 20, 20));
                     if (img != null) {
-                        // Get original image dimensions
                         int imgW = img.getWidth(this);
                         int imgH = img.getHeight(this);
-
-                        // Scale to fill the box (cover, not stretch)
                         double scaleX = (double) w / imgW;
                         double scaleY = (double) h / imgH;
                         double scale = Math.max(scaleX, scaleY);
-
                         int drawW = (int) (imgW * scale);
                         int drawH = (int) (imgH * scale);
-
-                        // Center the image
                         int offsetX = (w - drawW) / 2;
                         int offsetY = (h - drawH) / 2;
-
                         g2.drawImage(img, offsetX, offsetY, drawW, drawH, this);
                     } else {
                         g2.setColor(new Color(37, 114, 198));

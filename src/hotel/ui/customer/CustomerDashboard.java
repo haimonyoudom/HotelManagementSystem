@@ -1,5 +1,24 @@
 package hotel.ui.customer;
 
+/*
+ CustomerDashboard.java
+ -----------------------
+ Central shell for the customer-facing UI. This file creates the main
+ application window (the `JFrame`) and hosts all top-level screens used
+ by customers: dashboard, room browser, booking form, payment, and
+ history. The main method below shows the typical Swing application
+ startup flow:
+
+ 1. Set look-and-feel
+ 2. Create and configure the main `JFrame` (size, layout, behavior)
+ 3. Construct each panel/screen and add to the frame
+ 4. Call builder methods to populate UI for each screen
+ 5. Show the initial screen via `switchTo("dashboard")`
+
+ Inline comments in the file explain responsibilities of helper
+ methods like `addTopbar`, `addSidebar`, and `makeRoundPanel`.
+*/
+
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,32 +39,33 @@ public class CustomerDashboard {
     public static JPanel historyPanel;
 
     // ── Palette ────────────────────────────────────────────────────────
-static final Color BG_MAIN       = new Color(18, 18, 18);   // BG_DARK — app root
-static final Color BG_SIDEBAR    = new Color(18, 18, 18);   // dark navy sidebar
-static final Color BG_TOPBAR     = new Color(18, 18, 18);   // BG_DARK — topbar
-static final Color BG_CARD       = new Color(18, 18, 18);   // dark navy card
-static final Color BG_ELEVATED   = new Color(22, 22, 50);   // welcome banner
-static final Color BG_CONTENT    = new Color(18, 18, 18);   // BG_DARK — content area
-static final Color BG_ROW        = new Color(28, 28, 50);   // booking row bg
+    // Light-mode color tokens (changed from dark defaults)
+    static final Color BG_MAIN       = new Color(250, 250, 250); // app root (light)
+    static final Color BG_SIDEBAR    = new Color(245, 245, 245); // sidebar (slightly off-white)
+    static final Color BG_TOPBAR     = new Color(245, 245, 245); // topbar
+    static final Color BG_CARD       = new Color(250, 250, 250); // card background
+    static final Color BG_ELEVATED   = new Color(235, 241, 255); // elevated banner (light blue)
+    static final Color BG_CONTENT    = new Color(250, 250, 250); // content area
+    static final Color BG_ROW        = new Color(240, 240, 245); // row background
 
-static final Color BLUE          = new Color(59, 130, 246);  // stat card 1 — blue
-static final Color BLUE_DIM      = new Color(15, 30, 70);    // stat card 1 bg
-static final Color ORANGE        = new Color(249, 115, 22);  // stat card 2 — orange
-static final Color ORANGE_DIM    = new Color(60, 25, 8);     // stat card 2 bg
-static final Color PURPLE        = new Color(167, 139, 250); // stat card 3 — purple
-static final Color PURPLE_DIM    = new Color(35, 20, 80);    // stat card 3 bg
-static final Color TEAL          = new Color(52, 211, 153);  // stat card 4 — teal
-static final Color TEAL_DIM      = new Color(6, 40, 30);     // stat card 4 bg
+    static final Color BLUE          = new Color(59, 130, 246);  // stat card 1 — blue (keep)
+    static final Color BLUE_DIM      = new Color(225, 235, 255);  // stat card 1 bg (light)
+    static final Color ORANGE        = new Color(249, 115, 22);  // stat card 2 — orange
+    static final Color ORANGE_DIM    = new Color(255, 244, 230);  // stat card 2 bg (light)
+    static final Color PURPLE        = new Color(167, 139, 250); // stat card 3 — purple
+    static final Color PURPLE_DIM    = new Color(245, 240, 255);  // stat card 3 bg
+    static final Color TEAL          = new Color(52, 211, 153);  // stat card 4 — teal
+    static final Color TEAL_DIM      = new Color(235, 255, 245);  // stat card 4 bg
 
-static final Color NAV_ACTIVE_BG   = new Color(30, 40, 100); // blue active nav
-static final Color NAV_ACTIVE_TEXT = new Color(147, 197, 253);// light blue text
-static final Color NAV_HOVER_BG    = new Color(40, 40, 40);  // BG_HOVER
+    static final Color NAV_ACTIVE_BG   = new Color(220, 230, 255); // active nav (pale blue)
+    static final Color NAV_ACTIVE_TEXT = new Color(37, 99, 235);   // active nav text (blue)
+    static final Color NAV_HOVER_BG    = new Color(245, 245, 245); // hover bg (slight)
 
-static final Color TXT_PRIMARY   = new Color(240, 240, 240); // TEXT_WHITE
-static final Color TXT_SECONDARY = new Color(150, 150, 150); // TEXT_GRAY
-static final Color TXT_MUTED     = new Color(80, 80, 80);    // muted
-static final Color BORDER        = new Color(50, 50, 50);    // BORDER_COLOR
-static final Color BORDER_BLUE   = new Color(37, 99, 235);   // blue content border
+    static final Color TXT_PRIMARY   = new Color(20, 20, 20);     // primary text (dark)
+    static final Color TXT_SECONDARY = new Color(90, 90, 90);     // secondary text
+    static final Color TXT_MUTED     = new Color(140, 140, 140);  // muted
+    static final Color BORDER        = new Color(220, 220, 220);  // border color (light)
+    static final Color BORDER_BLUE   = new Color(37, 99, 235);    // blue content border
 
     public static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("MMM d, yyyy");
 
@@ -76,6 +96,10 @@ static final Color BORDER_BLUE   = new Color(37, 99, 235);   // blue content bor
         SwingUtilities.invokeLater(() -> {
 
             // ── Create the Window ──────────────────────────────────────
+            // Create and configure the top-level application frame. We
+            // use absolute layout here to match the leader's existing
+            // structure; child panels are sized and positioned against
+            // the constants declared above (e.g. `CONTENT_X`, `SIDEBAR_W`).
             JFrame frame = new JFrame("HMS - Hotel Management System");
             frame.setSize(W, H);
             frame.setLayout(null);
@@ -84,6 +108,9 @@ static final Color BORDER_BLUE   = new Color(37, 99, 235);   // blue content bor
             frame.getContentPane().setBackground(BG_MAIN);
 
             // ── Create Content Panels (one per screen) ─────────────────
+            // Each screen is implemented as its own JPanel. We create
+            // them here and add them to the frame; visibility is toggled
+            // by `switchTo(...)` so only one screen is visible at a time.
             dashboardPanel = new JPanel(null);
             roomsPanel     = new BrowseRoomsPanel();   // separate file
             bookingPanel   = new JPanel(null);
@@ -106,6 +133,10 @@ static final Color BORDER_BLUE   = new Color(37, 99, 235);   // blue content bor
             frame.add(historyPanel);
 
             // ── Call each panel class to build its screen ──────────────
+            // The individual builder methods (e.g. `buildDashboardScreen`)
+            // populate the panels with components. `BrowseRoomsPanel`
+            // constructs itself inside its own constructor, so we don't
+            // need a separate build call for it.
             buildDashboardScreen();   // built right here below
             // BrowseRoomsPanel builds itself inside its constructor
             buildBookingPanel();      // placeholder
@@ -258,20 +289,7 @@ static final Color BORDER_BLUE   = new Color(37, 99, 235);   // blue content bor
     // SCREEN 4 — PAYMENT  (placeholder — your teammate fills this)
     // =========================================================================
     public static void buildPaymentPanel() {
-        addTopbar(paymentPanel, "Payment", "Scan or view payment codes");
-        addSidebar(paymentPanel, "payment");
-
-        JPanel content = makeRoundPanel(BG_CONTENT);
-        content.setLayout(null);
-        content.setBounds(CONTENT_X + 14, CONTENT_Y + 14, CONTENT_W - 28, CONTENT_H - 28);
-        content.setBorder(BorderFactory.createLineBorder(BORDER_BLUE, 1));
-        paymentPanel.add(content);
-
-        JLabel lbl = new JLabel("Payment panel — coming soon.");
-        lbl.setBounds(24, 24, 400, 24);
-        lbl.setFont(F_MED);
-        lbl.setForeground(TXT_PRIMARY);
-        content.add(lbl);
+        PaymentPanel.build(paymentPanel);
     }
 
     // =========================================================================
