@@ -5,10 +5,9 @@ import hotel.dao.CustomerDAO;
 import hotel.dao.PaymentDAO;
 import hotel.dao.RoomDAO;
 import hotel.dao.StaffDAO;
-import hotel.model.Staff;
 import hotel.model.Booking;
 import hotel.model.Room;
-import hotel.ui.admin.UITheme;
+import hotel.ui.common.UITheme;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,8 +25,7 @@ public class AdminHomePanel extends JPanel {
     private final JLabel customersValue = valueLabel("0");
     private final JLabel staffValue = valueLabel("0");
     private final JLabel revenueValue = valueLabel("$0.00");
-    
-    private ChartPlaceholder chartPlaceholder;
+    private final ChartPlaceholder chartPlaceholder = new ChartPlaceholder();
 
     public AdminHomePanel() {
         setLayout(new BorderLayout(24, 24));
@@ -48,7 +46,6 @@ public class AdminHomePanel extends JPanel {
 
         JLabel reportTitle = UITheme.heading("Hotel Activity Overview");
         reportCard.add(reportTitle, BorderLayout.NORTH);
-        chartPlaceholder = new ChartPlaceholder();
         reportCard.add(chartPlaceholder, BorderLayout.CENTER);
 
         add(cards, BorderLayout.NORTH);
@@ -61,8 +58,9 @@ public class AdminHomePanel extends JPanel {
         try {
             List<Room> rooms = roomDAO.getAll();
             List<Booking> bookings = bookingDAO.getAll();
-            List<hotel.model.Customer> customers = customerDAO.getAll();
-            List<Staff> staff = staffDAO.getAll();
+            List<?> customers = customerDAO.getAll();
+            List<?> staff = staffDAO.getAll();
+            double revenue = paymentDAO.getTotalRevenue();
 
             long availableRooms = rooms.stream().filter(Room::isAvailable).count();
 
@@ -70,17 +68,16 @@ public class AdminHomePanel extends JPanel {
             bookingsValue.setText(String.valueOf(bookings.size()));
             customersValue.setText(String.valueOf(customers.size()));
             staffValue.setText(String.valueOf(staff.size()));
-            revenueValue.setText(String.format("$%.2f", paymentDAO.getTotalRevenue()));
-            
-            // Update chart with actual data
-            int[] data = {
-                (int) availableRooms,
-                bookings.size(),
-                staff.size(),
-                customers.size(),
-                (int) paymentDAO.getTotalRevenue() / 100  // Scale down for visual consistency
+            revenueValue.setText(String.format("$%.2f", revenue));
+
+            int[] chartData = {
+                    (int) availableRooms,
+                    bookings.size(),
+                    staff.size(),
+                    customers.size(),
+                    (int) Math.round(revenue / 100)
             };
-            chartPlaceholder.updateData(data);
+            chartPlaceholder.updateData(chartData);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to load dashboard: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -123,16 +120,15 @@ public class AdminHomePanel extends JPanel {
                 UITheme.SUCCESS,
                 new Color(205, 100, 154)
         };
-        
-        private int[] data = {0, 0, 0, 0, 0};
+        private int[] data = {1, 1, 1, 1, 1};
 
         ChartPlaceholder() {
             setOpaque(false);
         }
-        
+
         public void updateData(int[] newData) {
-            this.data = newData;
-            repaint();  // Refresh the chart
+            this.data = newData.clone();
+            repaint();
         }
 
         @Override
@@ -146,9 +142,7 @@ public class AdminHomePanel extends JPanel {
             int x = getWidth() / 2 - size / 2 - 80;
             int y = getHeight() / 2 - size / 2;
 
-            // Calculate arcs based on actual data
             int[] arcs = calculateArcs(data);
-
             int start = 90;
 
             for (int i = 0; i < arcs.length; i++) {
@@ -174,29 +168,25 @@ public class AdminHomePanel extends JPanel {
 
             g.dispose();
         }
-        
+
         private int[] calculateArcs(int[] values) {
             int[] arcs = new int[values.length];
             int total = 0;
-            
-            // Calculate total
             for (int value : values) {
-                total += value;
+                total += Math.max(value, 0);
             }
-            
             if (total == 0) {
-                // If no data, show equal distribution
-                for (int i = 0; i < arcs.length; i++) {
-                    arcs[i] = 72;  // 360 / 5 = 72 degrees each
-                }
+                for (int i = 0; i < arcs.length; i++) arcs[i] = 360 / arcs.length;
                 return arcs;
             }
-            
-            // Calculate arc percentage based on data
+            int used = 0;
             for (int i = 0; i < values.length; i++) {
-                arcs[i] = (int) ((values[i] / (double) total) * 360);
+                arcs[i] = (int) Math.round(values[i] / (double) total * 360);
+                used += arcs[i];
             }
-            
+            if (used != 360) {
+                arcs[0] += 360 - used;
+            }
             return arcs;
         }
     }

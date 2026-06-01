@@ -1,277 +1,184 @@
 package hotel.ui.admin;
 
+import hotel.dao.RoomDAO;
 import hotel.model.Room;
-import hotel.service.RoomService;
-import hotel.ui.util.UIConstants;
-import hotel.ui.util.UIUtils;
+
 import javax.swing.*;
-import javax.swing.border.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.List;
 
 public class ManageRoomsPanel extends JPanel {
-    private RoomService roomService;
-    private JPanel roomsGrid;
-    private JPanel filterPanel;
+    private final RoomDAO roomDAO = new RoomDAO();
+
+    private final DefaultTableModel tableModel = new DefaultTableModel(
+            new Object[]{"ID", "Room Number", "Type", "Price/Night", "Available"}, 0
+    ) {
+        @Override public boolean isCellEditable(int row, int column) { return false; }
+    };
+
+    private final JTable table = new JTable(tableModel);
 
     public ManageRoomsPanel() {
-        roomService = new RoomService();
-        setLayout(new BorderLayout(0, 20));
-        setBackground(UIConstants.BG_DARK);
-        setBorder(new EmptyBorder(25, 25, 25, 25));
+        setLayout(new BorderLayout(16, 16));
+        setBackground(AdminUITheme.BG);
+        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(UIConstants.BG_DARK);
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        actions.setOpaque(false);
 
-        JLabel titleLabel = new JLabel("Rooms");
-        titleLabel.setFont(UIConstants.FONT_TITLE);
-        titleLabel.setForeground(UIConstants.TEXT_PRIMARY);
-        headerPanel.add(titleLabel, BorderLayout.WEST);
+        JButton addBtn     = AdminUITheme.primaryButton("➕  Add Room");
+        JButton editBtn    = AdminUITheme.secondaryButton("✏  Edit Room");
+        JButton deleteBtn  = AdminUITheme.dangerButton("🗑  Delete Room");
+        JButton refreshBtn = AdminUITheme.secondaryButton("↻  Refresh");
 
-        filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        filterPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
-        filterPanel.setBackground(UIConstants.BG_DARK);
+        actions.add(addBtn);
+        actions.add(editBtn);
+        actions.add(deleteBtn);
+        actions.add(refreshBtn);
 
-        String[] filters = {"All", "Single", "Double", "Suite", "Deluxe"};
-        for (String filter : filters) {
-            filterPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
-            JButton btn = UIUtils.createSecondaryButton(filter);
-            btn.setPreferredSize(new Dimension(btn.getPreferredSize().width, 32));
-            attachFilterButtonBehavior(btn);
-            filterPanel.add(btn);
-        }
-        headerPanel.add(filterPanel, BorderLayout.SOUTH);
-        add(headerPanel, BorderLayout.NORTH);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        roomsGrid = new JPanel(new GridLayout(0, 4, 15, 15));
-        roomsGrid.setBackground(UIConstants.BG_DARK);
+        add(actions,                    BorderLayout.NORTH);
+        add(AdminUITheme.scroll(table), BorderLayout.CENTER);
 
-        JScrollPane scrollPane = new JScrollPane(roomsGrid);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        scrollPane.getViewport().setBackground(UIConstants.BG_DARK);
+        addBtn.addActionListener(e     -> openDialog(null));
+        editBtn.addActionListener(e    -> editSelected());
+        deleteBtn.addActionListener(e  -> deleteSelected());
+        refreshBtn.addActionListener(e -> reload());
 
-        add(scrollPane, BorderLayout.CENTER);
-
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        bottomPanel.setBackground(UIConstants.BG_DARK);
-
-        JButton addButton = UIUtils.createPrimaryButton("+ Add Room");
-        addButton.setPreferredSize(new Dimension(120, 36));
-        bottomPanel.add(addButton);
-
-        addButton.addActionListener(e -> {
-            JDialog dialogue = new JDialog((Frame) null, "Add Room", true);
-            dialogue.setSize(400, 320);
-            dialogue.setLocationRelativeTo(null);
-            dialogue.getContentPane().setBackground(UIConstants.BG_DARK);
-            dialogue.setLayout(new BorderLayout());
-
-            JPanel formPanel = new JPanel(new GridLayout(4, 2, 10, 10));
-            formPanel.setBackground(UIConstants.BG_DARK);
-            formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-            formPanel.add(new JLabel("Room Label:"));
-            JTextField roomNumberField = UIUtils.createStyledTextField();
-            formPanel.add(roomNumberField);
-
-            formPanel.add(new JLabel("Type:"));
-            JComboBox<String> typeCombo = UIUtils.createStyledComboBox(new String[]{"Single", "Double", "Continued", "Deluxed"});
-            formPanel.add(typeCombo);
-
-            formPanel.add(new JLabel("Price/Night:"));
-            JTextField priceField = UIUtils.createStyledTextField();
-            formPanel.add(priceField);
-
-            formPanel.add(new JLabel("Status:"));
-            JComboBox<String> statusCombo = UIUtils.createStyledComboBox(new String[]{"Available", "Occupied"});
-            formPanel.add(statusCombo);
-
-            JButton saveBtn = UIUtils.createPrimaryButton("Save");
-            saveBtn.addActionListener(ev -> {
-            String number = roomNumberField.getText().trim();
-            String type = (String) typeCombo.getSelectedItem();
-            String priceText = priceField.getText().trim();
-
-            if (number.isEmpty() || priceText.isEmpty()) {
-                UIUtils.showError(dialogue, "Please fill in all fields.");
-                return;
-            }
-
-            double price;
-            try {
-                price = Double.parseDouble(priceText);
-                if (price <= 0) throw new NumberFormatException();
-            } catch (NumberFormatException ex) {
-                UIUtils.showError(dialogue, "Please enter a valid price.");
-                return;
-            }
-
-            boolean success = roomService.addRoom(number, type, price);
-            if (success) {
-                UIUtils.showSuccess(dialogue, "Room added successfully.");
-                dialogue.dispose();
-                loadRooms();
-            } else {
-                UIUtils.showError(dialogue, "Failed to add room. Number may already exist.");
-            }
-        });
-
-            dialogue.add(formPanel, BorderLayout.CENTER);
-            dialogue.add(saveBtn, BorderLayout.SOUTH);
-            dialogue.setVisible(true);
-        });
-
-        add(bottomPanel, BorderLayout.SOUTH);
-
-        loadRooms();
+        reload();
     }
 
-    private void loadRooms() {
-        roomsGrid.removeAll();
+    public void reload() {
         try {
-            List<Room> rooms = roomService.getAllRooms();
-            for (Room room : rooms) {
-                roomsGrid.add(createRoomCard(room));
+            tableModel.setRowCount(0);
+            for (Room room : roomDAO.getAll()) {
+                tableModel.addRow(new Object[]{
+                    room.getId(), room.getRoomNumber(), room.getType(),
+                    String.format("$%.2f", room.getPricePerNight()),
+                    room.isAvailable() ? "Available" : "Occupied"
+                });
             }
-        } catch (Exception e) {
-            String[][] demoRooms = {
-                {"101", "Single", "89.00", "Available"},
-                {"102", "Double", "129.00", "Occupied"},
-                {"103", "Suite", "249.00", "Available"},
-                {"104", "Deluxe", "189.00", "Available"},
-                {"105", "Single", "89.00", "Occupied"},
-                {"201", "Double", "139.00", "Available"},
-                {"202", "Suite", "259.00", "Occupied"},
-                {"203", "Deluxe", "199.00", "Available"},
-            };
-            for (String[] r : demoRooms) {
-                Room room = new Room(0, r[0], r[1], Double.parseDouble(r[2]), "Available".equals(r[3]));
-                roomsGrid.add(createRoomCard(room));
-            }
-        }
-        roomsGrid.revalidate();
-        roomsGrid.repaint();
-    }
-
-    private void attachFilterButtonBehavior(JButton button) {
-        button.putClientProperty("selected", false);
-        button.addActionListener(e -> {
-            for (Component component : filterPanel.getComponents()) {
-                if (component instanceof JButton) {
-                    setFilterButtonSelected((JButton) component, false);
-                }
-            }
-            setFilterButtonSelected(button, true);
-        });
-
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (!Boolean.TRUE.equals(button.getClientProperty("selected"))) {
-                    button.setBackground(UIConstants.BG_INPUT);
-                }
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                if (!Boolean.TRUE.equals(button.getClientProperty("selected"))) {
-                    button.setBackground(UIConstants.BG_CARD);
-                }
-            }
-        });
-    }
-
-    private void setFilterButtonSelected(JButton button, boolean selected) {
-        button.putClientProperty("selected", selected);
-        if (selected) {
-            button.setBackground(UIConstants.ACCENT_RED);
-            button.setForeground(Color.WHITE);
-        } else {
-            button.setBackground(UIConstants.BG_CARD);
-            button.setForeground(UIConstants.TEXT_PRIMARY);
+            // Status badge on Available column
+            table.getColumnModel().getColumn(4).setCellRenderer(AdminUITheme.statusRenderer());
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Failed to load rooms: " + ex.getMessage(),
+                "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private JPanel createRoomCard(Room room) {
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBackground(UIConstants.BG_DARK);
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UIConstants.BORDER),
-            new EmptyBorder(15, 15, 15, 15)
-        ));
-        card.setPreferredSize(new Dimension(250, 180));
+    private void editSelected() {
+        int row = table.getSelectedRow();
+        if (row < 0) { JOptionPane.showMessageDialog(this, "Please select a room first."); return; }
+        int id = (int) tableModel.getValueAt(row, 0);
+        try {
+            Room room = roomDAO.getById(id);
+            if (room == null) { JOptionPane.showMessageDialog(this, "Room not found."); reload(); return; }
+            openDialog(room);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Failed to load room: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
-        JPanel imagePanel = new JPanel();
-        imagePanel.setBackground(UIConstants.BG_INPUT);
-        imagePanel.setPreferredSize(new Dimension(0, 80));
-        imagePanel.setBorder(BorderFactory.createLineBorder(UIConstants.BORDER));
-        imagePanel.setLayout(new BorderLayout());
+    private void deleteSelected() {
+        int row = table.getSelectedRow();
+        if (row < 0) { JOptionPane.showMessageDialog(this, "Please select a room first."); return; }
+        int id = (int) tableModel.getValueAt(row, 0);
+        int confirm = JOptionPane.showConfirmDialog(this, "Delete room #" + id + "?",
+            "Confirm Delete", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) return;
+        try {
+            roomDAO.delete(id);
+            reload();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Failed to delete: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
-        JLabel imgLabel = new JLabel("🖼️", SwingConstants.CENTER);
-        imgLabel.setFont(new Font("Segoe UI", Font.PLAIN, 32));
-        imagePanel.add(imgLabel, BorderLayout.CENTER);
+    private void openDialog(Room editing) {
+        boolean addMode = editing == null;
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
+            addMode ? "Add Room" : "Edit Room", true);
 
-        card.add(imagePanel, BorderLayout.NORTH);
+        JPanel root = AdminUITheme.pagePanel();
+        JPanel form = AdminUITheme.cardPanel(new GridBagLayout());
 
-        JPanel infoPanel = new JPanel(new GridLayout(3, 1, 0, 3));
-        infoPanel.setOpaque(false);
-        infoPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
+        JTextField        roomNumberField = AdminUITheme.textField();
+        JComboBox<String> typeBox         = AdminUITheme.comboBox("Single", "Double", "Suite", "Deluxe");
+        JTextField        priceField      = AdminUITheme.textField();
+        JCheckBox         availableBox    = new JCheckBox("Available");
+        availableBox.setOpaque(false);
+        availableBox.setSelected(true);
 
-        JLabel numberLabel = new JLabel("Room " + room.getRoomNumber());
-        numberLabel.setFont(UIConstants.FONT_SUBHEADER);
-        numberLabel.setForeground(UIConstants.TEXT_PRIMARY);
+        if (editing != null) {
+            roomNumberField.setText(editing.getRoomNumber());
+            typeBox.setSelectedItem(editing.getType());
+            priceField.setText(String.valueOf(editing.getPricePerNight()));
+            availableBox.setSelected(editing.isAvailable());
+        }
 
-        JLabel typeLabel = new JLabel(room.getType());
-        typeLabel.setFont(UIConstants.FONT_SMALL);
-        typeLabel.setForeground(UIConstants.TEXT_SECONDARY);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets  = new Insets(7, 7, 7, 7);
+        gbc.fill    = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
 
-        JPanel statusPanel = new JPanel(new BorderLayout());
-        statusPanel.setOpaque(false);
+        int y = 0;
+        addRow(form, gbc, y++, "Room Number",    roomNumberField);
+        addRow(form, gbc, y++, "Type",           typeBox);
+        addRow(form, gbc, y++, "Price Per Night",priceField);
+        addRow(form, gbc, y++, "Status",         availableBox);
 
-        JLabel priceLabel = new JLabel("$" + String.format("%.2f", room.getPricePerNight()) + "/night");
-        priceLabel.setFont(UIConstants.FONT_SMALL);
-        priceLabel.setForeground(UIConstants.ACCENT_RED);
+        JButton saveBtn   = AdminUITheme.primaryButton("Save");
+        JButton cancelBtn = AdminUITheme.secondaryButton("Cancel");
 
-        JLabel statusLabel = new JLabel(room.isAvailable() ? "Available" : "Occupied");
-        statusLabel.setFont(UIConstants.FONT_SMALL);
-        statusLabel.setForeground(room.isAvailable() ? UIConstants.ACCENT_GREEN : UIConstants.ACCENT_RED);
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttons.setOpaque(false);
+        buttons.add(cancelBtn); buttons.add(saveBtn);
 
-        statusPanel.add(priceLabel, BorderLayout.WEST);
-        statusPanel.add(statusLabel, BorderLayout.EAST);
+        gbc.gridx = 0; gbc.gridy = y; gbc.gridwidth = 2;
+        form.add(buttons, gbc);
 
-        infoPanel.add(numberLabel);
-        infoPanel.add(typeLabel);
-        infoPanel.add(statusPanel);
+        root.add(form, BorderLayout.CENTER);
+        dialog.add(root);
 
-        card.add(infoPanel, BorderLayout.CENTER);
+        saveBtn.addActionListener(e -> {
+            String number   = roomNumberField.getText().trim();
+            String priceStr = priceField.getText().trim();
+            if (number.isBlank() || priceStr.isBlank()) {
+                JOptionPane.showMessageDialog(dialog, "Room number and price are required.", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            try {
+                double price = Double.parseDouble(priceStr);
+                Room room    = addMode ? new Room() : editing;
+                room.setRoomNumber(number);
+                room.setType(String.valueOf(typeBox.getSelectedItem()));
+                room.setPricePerNight(price);
+                room.setAvailable(availableBox.isSelected());
+                if (addMode) roomDAO.add(room); else roomDAO.update(room);
+                dialog.dispose();
+                reload();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, "Price must be a valid number.", "Validation", JOptionPane.WARNING_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Failed to save: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
 
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
-        actionPanel.setOpaque(false);
-        actionPanel.setBorder(new EmptyBorder(5, 0, 0, 0));
+        cancelBtn.addActionListener(e -> dialog.dispose());
+        dialog.setSize(520, 420);
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
 
-        JButton editBtn = new JButton("✏️");
-        editBtn.setFont(UIConstants.FONT_SMALL);
-        editBtn.setBackground(UIConstants.BG_INPUT);
-        editBtn.setForeground(UIConstants.TEXT_PRIMARY);
-        editBtn.setFocusPainted(false);
-        editBtn.setBorder(BorderFactory.createLineBorder(UIConstants.BORDER));
-        editBtn.setPreferredSize(new Dimension(32, 28));
-
-        JButton deleteBtn = new JButton("🗑️");
-        deleteBtn.setFont(UIConstants.FONT_SMALL);
-        deleteBtn.setBackground(UIConstants.BG_INPUT);
-        
-        deleteBtn.setForeground(UIConstants.ACCENT_RED);
-        deleteBtn.setFocusPainted(false);
-        deleteBtn.setBorder(BorderFactory.createLineBorder(UIConstants.BORDER));
-        deleteBtn.setPreferredSize(new Dimension(32, 28));
-
-        actionPanel.add(editBtn);
-        actionPanel.add(deleteBtn);
-        card.add(actionPanel, BorderLayout.SOUTH);
-
-        return card;
+    private void addRow(JPanel form, GridBagConstraints gbc, int y, String label, JComponent input) {
+        gbc.gridx = 0; gbc.gridy = y; gbc.gridwidth = 1; gbc.weightx = 0;
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(AdminUITheme.SMALL_FONT);
+        lbl.setForeground(AdminUITheme.TEXT_MUTED);
+        form.add(lbl, gbc);
+        gbc.gridx = 1; gbc.weightx = 1;
+        form.add(input, gbc);
     }
 }
