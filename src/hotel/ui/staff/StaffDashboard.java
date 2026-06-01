@@ -1,38 +1,46 @@
 package hotel.ui.staff;
 
+import hotel.ui.staff.*;
+import hotel.ui.staff.util.UIConstants;
+import hotel.ui.staff.util.UIHelper;
+
 import javax.swing.*;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import hotel.model.User;
+import hotel.service.BookingService;
+import hotel.service.RoomService;
+import hotel.model.Booking;
+import hotel.model.Room;
+
+import java.util.List;
 
 public class StaffDashboard extends JFrame {
-    // ── Declare all panels here so buttons can access them ──
+
+    // ── Panel references ──────────────────────────────────────────────
     static JPanel sidebarPanel;
     static JPanel mainPanel;
 
-    // ── Colors matching AdminDashboard dark theme ──
-    static final Color BG_DARK = new Color(18, 18, 18);
-    static final Color BG_CARD = new Color(28, 28, 28);
-    static final Color BG_HOVER = new Color(40, 40, 40);
-    static final Color ACCENT_RED = new Color(200, 50, 50);
-    static final Color TEXT_WHITE = new Color(240, 240, 240);
-    static final Color TEXT_GRAY = new Color(150, 150, 150);
-    static final Color BORDER_COLOR = new Color(50, 50, 50);
+    private String staffName;
+    private String staffEmail;
+    private BookingService bookingService;
+    private RoomService roomService;
+    private JButton activeSidebarBtn = null;
 
-    // ── Frame dimensions ──
-    static final int FRAME_WIDTH = 1400;
-    static final int FRAME_HEIGHT = 900;
-    static final int SIDEBAR_WIDTH = 220;
-    static final int CONTENT_X = SIDEBAR_WIDTH;
-    static final int CONTENT_WIDTH = FRAME_WIDTH - SIDEBAR_WIDTH;
+    // ─────────────────────────────────────────────────────────────────
+    public StaffDashboard(User user) {
+        this.staffName = user.getName() != null ? user.getName() : user.getUsername();
+        this.staffEmail = user.getEmail() != null ? user.getEmail() : user.getUsername() + "@hms.com";
+        this.bookingService = new BookingService();
+        this.roomService = new RoomService();
 
-    private String staffName = "Heaheang";
-
-    public StaffDashboard() {
         setupFrame();
         createSidebar();
         createMainContent();
+
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 dispose();
@@ -40,331 +48,682 @@ public class StaffDashboard extends JFrame {
         });
     }
 
+    // ── Frame setup ───────────────────────────────────────────────────
     private void setupFrame() {
-        setTitle("Staff Dashboard - Hotel Management System");
+        setTitle("Staff Dashboard – Hotel Management System");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setMinimumSize(new Dimension(800, 600));
+        setSize(1200, 750);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setResizable(true);
         setLayout(new BorderLayout());
-        getContentPane().setBackground(BG_DARK);
+        getContentPane().setBackground(UIConstants.THEME_WHITE_BG);
     }
 
+    // ── Sidebar ───────────────────────────────────────────────────────
     private void createSidebar() {
         sidebarPanel = new JPanel();
-        sidebarPanel.setPreferredSize(new Dimension(SIDEBAR_WIDTH, FRAME_HEIGHT));
-        sidebarPanel.setBackground(BG_DARK);
+        sidebarPanel.setPreferredSize(new Dimension(UIConstants.SIDEBAR_WIDTH, 0));
+        sidebarPanel.setMinimumSize(new Dimension(UIConstants.SIDEBAR_WIDTH, 0));
+        sidebarPanel.setBackground(UIConstants.THEME_WHITE_BG);
         sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
-        sidebarPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER_COLOR));
+        sidebarPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(220, 220, 220)));
 
-        // HMS Header
+        // ── Brand label ──────────────────────────────────────────────
+        sidebarPanel.add(Box.createVerticalStrut(24));
         JLabel hmsLabel = new JLabel("HMS");
-        hmsLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        hmsLabel.setForeground(TEXT_WHITE);
-        hmsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        sidebarPanel.add(Box.createVerticalStrut(30));
+        hmsLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        hmsLabel.setForeground(UIConstants.THEME_NAVY);
+        hmsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Left padding for the brand label only
+        hmsLabel.setBorder(BorderFactory.createEmptyBorder(0, 18, 0, 0));
         sidebarPanel.add(hmsLabel);
-        sidebarPanel.add(Box.createVerticalStrut(40));
+        sidebarPanel.add(Box.createVerticalStrut(22));
 
-        // Staff Label
-        JLabel staffLabel = new JLabel("Staff");
-        staffLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        staffLabel.setForeground(TEXT_GRAY);
-        staffLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        staffLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
-        sidebarPanel.add(staffLabel);
+        // ── Section label ────────────────────────────────────────────
+        JLabel sectionLabel = new JLabel("Staff");
+        sectionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        sectionLabel.setForeground(new Color(130, 130, 130));
+        sectionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        sectionLabel.setBorder(BorderFactory.createEmptyBorder(0, 18, 8, 0));
+        sidebarPanel.add(sectionLabel);
 
-        // Menu Items
-        addSidebarMenuItem("🏠 Dashboard", true);
-        addSidebarMenuItem("📅 Bookings", false);
-        addSidebarMenuItem("🔑 Check-in/Out", false);
-        addSidebarMenuItem("🏨 Rooms", false);
+        // Simpler icon map using text symbols that render on most JVMs
+        String[] icons = { "⊞", "☑", "⌂", "▦" };
+        String[] labels = { "Dashboard", "Bookings", "Check-in/Out", "Rooms" };
+
+        for (int i = 0; i < labels.length; i++) {
+            JButton btn = buildNavButton(icons[i], labels[i]);
+            sidebarPanel.add(btn);
+            if (i == 0) {
+                markActive(btn);
+                activeSidebarBtn = btn;
+            }
+        }
 
         sidebarPanel.add(Box.createVerticalGlue());
 
-        // User Info at Bottom
-        JPanel userPanel = new JPanel();
-        userPanel.setBackground(BG_DARK);
-        userPanel.setLayout(new BoxLayout(userPanel, BoxLayout.Y_AXIS));
-        userPanel.setMaximumSize(new Dimension(SIDEBAR_WIDTH, 80));
-        userPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-
-        JLabel userInitial = new JLabel("ST");
-        userInitial.setFont(new Font("Arial", Font.BOLD, 16));
-        userInitial.setForeground(TEXT_WHITE);
-        userInitial.setBackground(ACCENT_RED);
-        userInitial.setOpaque(true);
-        userInitial.setAlignmentX(Component.CENTER_ALIGNMENT);
-        Dimension size = new Dimension(40, 40);
-        userInitial.setPreferredSize(size);
-        userInitial.setMaximumSize(size);
-        userInitial.setMinimumSize(size);
-        userPanel.add(userInitial);
-        userPanel.add(Box.createVerticalStrut(8));
-
-        JLabel userName = new JLabel("Staff");
-        userName.setFont(new Font("Arial", Font.BOLD, 13));
-        userName.setForeground(TEXT_WHITE);
-        userName.setAlignmentX(Component.CENTER_ALIGNMENT);
-        userPanel.add(userName);
-
-        JLabel userEmail = new JLabel("staff@gmail.com");
-        userEmail.setFont(new Font("Arial", Font.PLAIN, 11));
-        userEmail.setForeground(TEXT_GRAY);
-        userEmail.setAlignmentX(Component.CENTER_ALIGNMENT);
-        userPanel.add(userEmail);
-
-        sidebarPanel.add(userPanel);
+        // ── User chip ────────────────────────────────────────────────
+        sidebarPanel.add(buildUserChip());
 
         add(sidebarPanel, BorderLayout.WEST);
     }
 
-    private void addSidebarMenuItem(String text, boolean isActive) {
-        JButton menuItem = new JButton(text);
-        menuItem.setMaximumSize(new Dimension(SIDEBAR_WIDTH, 45));
-        menuItem.setPreferredSize(new Dimension(SIDEBAR_WIDTH, 45));
-        menuItem.setBackground(isActive ? ACCENT_RED : BG_DARK);
-        menuItem.setForeground(TEXT_WHITE);
-        menuItem.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        menuItem.setFont(new Font("Arial", Font.PLAIN, 14));
-        menuItem.setFocusPainted(false);
-        menuItem.setContentAreaFilled(true);
-        menuItem.setHorizontalAlignment(SwingConstants.LEFT);
+    private JButton buildNavButton(String icon, String label) {
+        JButton btn = new JButton() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                        RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                // Active: fill entire row; otherwise transparent fill
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
 
-        menuItem.addMouseListener(new MouseAdapter() {
+        // ── Layout: icon box + label ──────────────────────────────────
+        btn.setLayout(new BorderLayout());
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        btn.setPreferredSize(new Dimension(Integer.MAX_VALUE, 46));
+        btn.setMinimumSize(new Dimension(0, 46));
+
+        // No border, no focus ring – we paint everything ourselves
+        btn.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        btn.setFocusPainted(false);
+        btn.setContentAreaFilled(false); // we paint manually above
+        btn.setOpaque(false);
+        btn.setBackground(UIConstants.THEME_WHITE_BG);
+
+        // Inner content panel (transparent, sits inside the button)
+        JPanel inner = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        inner.setOpaque(false);
+        inner.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+
+        // Icon box
+        JLabel iconBox = new JLabel(icon) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                        RenderingHints.VALUE_ANTIALIAS_ON);
+                // Semi-transparent white box behind icon
+                g2.setColor(new Color(255, 255, 255, 25));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        iconBox.setOpaque(false);
+        iconBox.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 15));
+        iconBox.setForeground(new Color(200, 200, 200));
+        iconBox.setHorizontalAlignment(SwingConstants.CENTER);
+        iconBox.setVerticalAlignment(SwingConstants.CENTER);
+        Dimension iconSize = new Dimension(32, 32);
+        iconBox.setPreferredSize(iconSize);
+        iconBox.setMinimumSize(iconSize);
+        iconBox.setMaximumSize(iconSize);
+
+        // Label
+        JLabel textLabel = new JLabel(label);
+        textLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        textLabel.setForeground(new Color(80, 80, 80));
+        textLabel.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 0));
+
+        inner.add(iconBox);
+        inner.add(textLabel);
+        btn.add(inner, BorderLayout.CENTER);
+
+        // Store references so we can update colours on state change
+        btn.putClientProperty("iconBox", iconBox);
+        btn.putClientProperty("textLabel", textLabel);
+        btn.putClientProperty("innerPanel", inner);
+
+        // ── Mouse interactions ────────────────────────────────────────
+        btn.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseEntered(MouseEvent e) {
-                if (!menuItem.getBackground().equals(ACCENT_RED)) {
-                    menuItem.setBackground(BG_HOVER);
+                if (btn != activeSidebarBtn) {
+                    btn.setBackground(new Color(240, 240, 240));
+                    btn.repaint();
                 }
             }
 
+            @Override
             public void mouseExited(MouseEvent e) {
-                if (!menuItem.getBackground().equals(ACCENT_RED)) {
-                    menuItem.setBackground(BG_DARK);
+                if (btn != activeSidebarBtn) {
+                    btn.setBackground(UIConstants.THEME_WHITE_BG);
+                    btn.repaint();
                 }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (activeSidebarBtn != null)
+                    deactivate(activeSidebarBtn);
+                markActive(btn);
+                activeSidebarBtn = btn;
+                showPanel(label);
             }
         });
 
-        sidebarPanel.add(menuItem);
+        return btn;
     }
 
+    private void showPanel(String label) {
+        Container cp = getContentPane();
+        BorderLayout bl = (BorderLayout) cp.getLayout();
+        Component current = bl.getLayoutComponent(BorderLayout.CENTER);
+        if (current != null) {
+            cp.remove(current);
+        }
+
+        JPanel panel;
+        switch (label) {
+            case "Bookings":
+                panel = new PendingBookingsPanel();
+                break;
+            case "Check-in/Out":
+                panel = new CheckInOutPanel();
+                break;
+            case "Rooms":
+                panel = new RoomStatusPanel();
+                break;
+            default:
+                panel = mainPanel;
+                break;
+        }
+
+        cp.add(panel, BorderLayout.CENTER);
+        cp.revalidate();
+        cp.repaint();
+    }
+
+    /** Turn a button visually active (orange row + white text). */
+    private void markActive(JButton btn) {
+        btn.setBackground(new Color(230, 240, 255));
+        btn.setContentAreaFilled(false); // keep custom paint
+        JLabel iconBox = (JLabel) btn.getClientProperty("iconBox");
+        JLabel textLabel = (JLabel) btn.getClientProperty("textLabel");
+        if (iconBox != null)
+            iconBox.setForeground(UIConstants.THEME_NAVY);
+        if (textLabel != null) {
+            textLabel.setForeground(UIConstants.THEME_NAVY);
+            textLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        }
+        btn.repaint();
+    }
+
+    /** Restore a button to its inactive appearance. */
+    private void deactivate(JButton btn) {
+        btn.setBackground(UIConstants.THEME_WHITE_BG);
+        JLabel iconBox = (JLabel) btn.getClientProperty("iconBox");
+        JLabel textLabel = (JLabel) btn.getClientProperty("textLabel");
+        if (iconBox != null)
+            iconBox.setForeground(new Color(150, 150, 150));
+        if (textLabel != null) {
+            textLabel.setForeground(new Color(80, 80, 80));
+            textLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        }
+        btn.repaint();
+    }
+
+    // ── User chip (bottom of sidebar) ─────────────────────────────────
+    private JPanel buildUserChip() {
+        JPanel chip = new JPanel();
+        chip.setBackground(new Color(245, 245, 245));
+        chip.setLayout(new BoxLayout(chip, BoxLayout.X_AXIS));
+        chip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
+        chip.setAlignmentX(Component.LEFT_ALIGNMENT);
+        chip.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(220, 220, 220)),
+                BorderFactory.createEmptyBorder(12, 14, 12, 14)));
+
+        // Circular avatar
+        JLabel avatar = new JLabel("ST") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                        RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(UIConstants.THEME_NAVY);
+                g2.fillOval(0, 0, getWidth(), getHeight());
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        avatar.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        avatar.setForeground(Color.WHITE);
+        avatar.setHorizontalAlignment(SwingConstants.CENTER);
+        avatar.setOpaque(false);
+        Dimension av = new Dimension(36, 36);
+        avatar.setPreferredSize(av);
+        avatar.setMinimumSize(av);
+        avatar.setMaximumSize(av);
+
+        JPanel info = new JPanel();
+        info.setBackground(new Color(245, 245, 245));
+        info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
+
+        JLabel nameL = new JLabel(staffName);
+        nameL.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        nameL.setForeground(UIConstants.THEME_NAVY);
+
+        JLabel mailL = new JLabel(staffEmail);
+        mailL.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        mailL.setForeground(new Color(130, 130, 130));
+
+        info.add(nameL);
+        info.add(mailL);
+
+        chip.add(avatar);
+        chip.add(Box.createHorizontalStrut(10));
+        chip.add(info);
+        return chip;
+    }
+
+    // ── Main content ──────────────────────────────────────────────────
     private void createMainContent() {
-        mainPanel = new JPanel();
-        mainPanel.setBackground(BG_DARK);
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(UIConstants.THEME_WHITE_BG);
 
-        // ── Header ──────────────────────────────────────────────────
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(BG_DARK);
-        headerPanel.setAlignmentX(0f);
-        headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        mainPanel.add(buildHeaderBar(), BorderLayout.NORTH);
 
-        JLabel dashboardTitle = new JLabel("DASHBOARD");
-        dashboardTitle.setFont(new Font("Arial", Font.BOLD, 28));
-        dashboardTitle.setForeground(ACCENT_RED);
+        JPanel contentWrapper = new JPanel(new BorderLayout(0, 20));
+        contentWrapper.setBackground(UIConstants.THEME_WHITE_BG);
+        contentWrapper.setBorder(BorderFactory.createEmptyBorder(16, 30, 30, 30));
 
-        JLabel dateLabel = new JLabel(getCurrentDate());
-        dateLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        dateLabel.setForeground(TEXT_GRAY);
+        contentWrapper.add(buildGreetingCard(), BorderLayout.NORTH);
 
-        headerPanel.add(dashboardTitle, BorderLayout.WEST);
-        headerPanel.add(dateLabel, BorderLayout.EAST);
-        mainPanel.add(headerPanel);
+        JPanel innerBody = new JPanel(new BorderLayout(0, 24));
+        innerBody.setBackground(UIConstants.THEME_WHITE_BG);
+        innerBody.add(buildStatCardsRow(), BorderLayout.NORTH);
+        innerBody.add(buildBottomRow(), BorderLayout.CENTER);
 
-        // ── Greeting ─────────────────────────────────────────────────
-        JPanel greetingPanel = new JPanel(new BorderLayout());
-        greetingPanel.setBackground(BG_CARD);
-        greetingPanel.setAlignmentX(0f);
-        greetingPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
-        greetingPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                BorderFactory.createEmptyBorder(20, 30, 20, 30)));
+        contentWrapper.add(innerBody, BorderLayout.CENTER);
+        mainPanel.add(contentWrapper, BorderLayout.CENTER);
 
-        JPanel greetingText = new JPanel();
-        greetingText.setBackground(BG_CARD);
-        greetingText.setLayout(new BoxLayout(greetingText, BoxLayout.Y_AXIS));
-
-        JLabel greeting = new JLabel("Good morning, " + staffName);
-        greeting.setFont(new Font("Arial", Font.BOLD, 24));
-        greeting.setForeground(TEXT_WHITE);
-        greeting.setAlignmentX(0f);
-
-        JLabel greetingSubtitle = new JLabel("Here is your overview for today, " + getCurrentDateShort());
-        greetingSubtitle.setFont(new Font("Arial", Font.PLAIN, 13));
-        greetingSubtitle.setForeground(TEXT_GRAY);
-        greetingSubtitle.setAlignmentX(0f);
-        greetingSubtitle.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
-
-        greetingText.add(greeting);
-        greetingText.add(greetingSubtitle);
-        greetingPanel.add(greetingText, BorderLayout.WEST);
-        mainPanel.add(greetingPanel);
-        mainPanel.add(Box.createVerticalStrut(20));
-
-        // ── Stat Cards ───────────────────────────────────────────────
-        JPanel statsPanel = new JPanel(new GridLayout(1, 4, 15, 0));
-        statsPanel.setBackground(BG_DARK);
-        statsPanel.setAlignmentX(0f);
-        statsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
-        statsPanel.setBorder(BorderFactory.createEmptyBorder(0, 30, 0, 30));
-
-        statsPanel.add(createStatCard("PENDING BOOKINGS", "1", new Color(120, 100, 180)));
-        statsPanel.add(createStatCard("TODAY'S CHECK-INS", "4", new Color(80, 150, 200)));
-        statsPanel.add(createStatCard("TODAY'S CHECK-OUTS", "4", new Color(200, 100, 100)));
-        statsPanel.add(createStatCard("OCCUPIED ROOMS", "15", new Color(220, 180, 80)));
-        mainPanel.add(statsPanel);
-        mainPanel.add(Box.createVerticalStrut(25));
-
-        // ── Table + Room Status ──────────────────────────────────────
-        JPanel contentArea = new JPanel(new GridLayout(1, 2, 15, 0));
-        contentArea.setBackground(BG_DARK);
-        contentArea.setAlignmentX(0f);
-        contentArea.setMaximumSize(new Dimension(Integer.MAX_VALUE, 400));
-        contentArea.setBorder(BorderFactory.createEmptyBorder(0, 30, 0, 30));
-
-        contentArea.add(createSchedulePanel());
-        contentArea.add(createRoomStatusPanel());
-        mainPanel.add(contentArea);
-        mainPanel.add(Box.createVerticalGlue());
-
-        JScrollPane scrollPane = new JScrollPane(mainPanel);
-        scrollPane.setBackground(BG_DARK);
-        scrollPane.getViewport().setBackground(BG_DARK);
-        scrollPane.setBorder(null);
-        add(scrollPane, BorderLayout.CENTER);
+        getContentPane().add(mainPanel, BorderLayout.CENTER);
     }
 
-    private JPanel createStatCard(String title, String value, Color borderColor) {
-        JPanel card = new JPanel();
-        card.setBackground(BG_CARD);
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+    // ── Header bar ────────────────────────────────────────────────────
+    private JPanel buildHeaderBar() {
+        JPanel bar = new JPanel(new BorderLayout());
+        bar.setBackground(UIConstants.THEME_WHITE_BG);
+        bar.setPreferredSize(new Dimension(0, 68));
+        bar.setMinimumSize(new Dimension(0, 68));
+        bar.setBorder(BorderFactory.createEmptyBorder(18, 30, 10, 30));
+
+        JLabel title = new JLabel("DASHBOARD");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        title.setForeground(UIConstants.THEME_NAVY);
+
+        JPanel right = new JPanel();
+        right.setBackground(UIConstants.THEME_WHITE_BG);
+        right.setLayout(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+
+        JLabel dateLbl = new JLabel(getCurrentDate());
+        dateLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        dateLbl.setForeground(UIConstants.THEME_DARK_FONT);
+
+        JLabel bell = new JLabel("  \uD83D\uDD14");
+        bell.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+
+        right.add(dateLbl);
+        right.add(bell);
+
+        bar.add(title, BorderLayout.WEST);
+        bar.add(right, BorderLayout.EAST);
+        return bar;
+    }
+
+    // ── Greeting card ─────────────────────────────────────────────────
+    private JPanel buildGreetingCard() {
+        JPanel card = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                        RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp = new GradientPaint(
+                        0, 0, new Color(245, 245, 245),
+                        getWidth(), getHeight(), new Color(250, 250, 250));
+                g2.setPaint(gp);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+        card.setPreferredSize(new Dimension(0, 110));
+        card.setMinimumSize(new Dimension(0, 80));
         card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(3, 0, 0, 0, borderColor),
-                BorderFactory.createEmptyBorder(12, 15, 12, 15)));
+                BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                BorderFactory.createEmptyBorder(20, 28, 20, 28)));
 
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 11));
-        titleLabel.setForeground(TEXT_GRAY);
+        JPanel text = new JPanel();
+        text.setOpaque(false);
+        text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
 
-        JLabel valueLabel = new JLabel(value);
-        valueLabel.setFont(new Font("Arial", Font.BOLD, 28));
-        valueLabel.setForeground(borderColor);
-        valueLabel.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
+        JLabel greet = new JLabel("Good morning, " + staffName);
+        greet.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        greet.setForeground(UIConstants.THEME_DARK_FONT);
 
-        card.add(titleLabel);
-        card.add(valueLabel);
+        JLabel sub = new JLabel("Here is your overview for today, " + getCurrentDateShort());
+        sub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        sub.setForeground(new Color(120, 120, 120));
+        sub.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
+
+        text.add(greet);
+        text.add(sub);
+        card.add(text, BorderLayout.WEST);
 
         return card;
     }
 
+    // ── Stat cards row ────────────────────────────────────────────────
+    private JPanel buildStatCardsRow() {
+        JPanel row = new JPanel(new GridLayout(1, 4, 14, 0));
+        row.setBackground(UIConstants.THEME_WHITE_BG);
+        row.setPreferredSize(new Dimension(0, 110));
+        row.setMinimumSize(new Dimension(0, 80));
+
+        int[] stats = loadStatisticsData();
+        row.add(createStatCard("PENDING BOOKINGS", String.valueOf(stats[0]), "Awaiting Approval",
+                UIConstants.STAT_PURPLE));
+        row.add(createStatCard("TODAY'S CHECK-INS", String.valueOf(stats[1]), stats[1] + " remaining",
+                UIConstants.STAT_BLUE));
+        row.add(createStatCard("TODAY'S CHECK-OUTS", String.valueOf(stats[2]), "All processed", UIConstants.STAT_RED));
+        row.add(createStatCard("OCCUPIED ROOMS", String.valueOf(stats[3]), "of 20 total", UIConstants.STAT_YELLOW));
+        return row;
+    }
+
+    private JPanel createStatCard(String title, String value, String subtitle, Color accent) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(UIConstants.THEME_WHITE_BG);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 3, 0, 0, accent),
+                BorderFactory.createEmptyBorder(12, 14, 12, 14)));
+
+        JLabel titleLbl = new JLabel(title);
+        titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        titleLbl.setForeground(new Color(120, 120, 120));
+
+        JLabel valueLbl = new JLabel(value);
+        valueLbl.setFont(new Font("Segoe UI", Font.BOLD, 30));
+        valueLbl.setForeground(accent);
+
+        JLabel subLbl = new JLabel(subtitle);
+        subLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        subLbl.setForeground(new Color(120, 120, 120));
+
+        JPanel stack = new JPanel(new GridLayout(3, 1, 0, 2));
+        stack.setBackground(UIConstants.THEME_WHITE_BG);
+        stack.add(titleLbl);
+        stack.add(valueLbl);
+        stack.add(subLbl);
+        card.add(stack, BorderLayout.CENTER);
+
+        return card;
+    }
+
+    // ── Bottom split row ──────────────────────────────────────────────
+    private JPanel buildBottomRow() {
+        JPanel row = new JPanel(new GridLayout(1, 2, 14, 0));
+        row.setBackground(UIConstants.THEME_WHITE_BG);
+
+        row.add(createSchedulePanel());
+        row.add(createRoomStatusPanel());
+        return row;
+    }
+
+    // ── Schedule panel ────────────────────────────────────────────────
     private JPanel createSchedulePanel() {
-        JPanel panel = new JPanel();
-        panel.setBackground(BG_CARD);
-        panel.setLayout(new BorderLayout());
-        panel.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1));
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(UIConstants.THEME_WHITE_BG);
+        panel.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
 
-        JLabel titleLabel = new JLabel("Upcoming schedule");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        titleLabel.setForeground(TEXT_WHITE);
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 15));
-        panel.add(titleLabel, BorderLayout.NORTH);
+        JLabel titleLbl = new JLabel("Upcoming schedule");
+        titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        titleLbl.setForeground(UIConstants.THEME_DARK_FONT);
+        titleLbl.setBorder(BorderFactory.createEmptyBorder(16, 20, 12, 20));
+        panel.add(titleLbl, BorderLayout.NORTH);
 
-        // Table
-        String[] columns = { "GUEST", "ROOM", "TIME", "STATUS" };
-        Object[][] data = {
-                { "Tony Start", "Suite 401", "3:00 PM", "Pending" },
-                { "Chhi Laykorng", "Deluxe 302", "1:00 PM", "Approved" },
-                { "Bruce Wang", "Standard 108", "5:00 PM", "Pending" },
-                { "Octopus Prime", "Family 200", "4:50 PM", "Checked In" }
-        };
+        String[] cols = { "GUEST", "ROOM", "TIME", "STATUS" };
+        Object[][] data = loadBookingData();
 
-        JTable table = new JTable(data, columns) {
-            public boolean isCellEditable(int row, int column) {
+        DefaultTableModel model = new DefaultTableModel(data, cols) {
+            public boolean isCellEditable(int r, int c) {
                 return false;
             }
         };
 
-        table.setBackground(BG_CARD);
-        table.setForeground(TEXT_WHITE);
-        table.setGridColor(BORDER_COLOR);
-        table.setRowHeight(35);
-        table.setFont(new Font("Arial", Font.PLAIN, 12));
-        table.getTableHeader().setBackground(BG_DARK);
-        table.getTableHeader().setForeground(TEXT_GRAY);
-        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        JTable table = new JTable(model);
+        table.setBackground(UIConstants.THEME_WHITE_BG);
+        table.setForeground(UIConstants.THEME_DARK_FONT);
+        table.setGridColor(new Color(200, 200, 200));
+        table.setRowHeight(40);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.setShowVerticalLines(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setSelectionBackground(new Color(220, 220, 220));
+        table.setSelectionForeground(UIConstants.THEME_DARK_FONT);
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBackground(BG_CARD);
-        scrollPane.getViewport().setBackground(BG_CARD);
-        scrollPane.setBorder(null);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        JTableHeader header = table.getTableHeader();
+        header.setBackground(UIConstants.THEME_WHITE_BG);
+        header.setForeground(UIConstants.THEME_NAVY);
+        header.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        header.setPreferredSize(new Dimension(0, 34));
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)));
+        ((DefaultTableCellRenderer) header.getDefaultRenderer())
+                .setHorizontalAlignment(SwingConstants.LEFT);
 
+        DefaultTableCellRenderer rowRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val,
+                    boolean sel, boolean foc, int row, int col) {
+                super.getTableCellRendererComponent(t, val, sel, foc, row, col);
+                setBackground(row % 2 == 0 ? UIConstants.THEME_WHITE_BG : new Color(248, 248, 248));
+                setForeground(UIConstants.THEME_DARK_FONT);
+                setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+                return this;
+            }
+        };
+        table.setDefaultRenderer(Object.class, rowRenderer);
+
+        table.getColumnModel().getColumn(3).setCellRenderer(new TableCellRenderer() {
+            public Component getTableCellRendererComponent(JTable t, Object val,
+                    boolean sel, boolean foc, int row, int col) {
+                String status = val == null ? "" : val.toString();
+                Color rowBg = row % 2 == 0 ? UIConstants.THEME_WHITE_BG : new Color(248, 248, 248);
+
+                JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+                wrapper.setBackground(rowBg);
+
+                JLabel badge = new JLabel(status) {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                                RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setColor(getBackground());
+                        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                        g2.dispose();
+                        super.paintComponent(g);
+                    }
+                };
+                badge.setOpaque(false);
+                badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                badge.setForeground(Color.WHITE);
+                badge.setHorizontalAlignment(SwingConstants.CENTER);
+                badge.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
+
+                Color bg = UIConstants.BADGE_PENDING;
+                if (status.equalsIgnoreCase("approved"))
+                    bg = UIConstants.BADGE_APPROVED;
+                else if (status.equalsIgnoreCase("checked in"))
+                    bg = UIConstants.BADGE_CHECKIN;
+                badge.setBackground(bg);
+
+                wrapper.add(badge);
+                return wrapper;
+            }
+        });
+
+        table.getColumnModel().getColumn(0).setPreferredWidth(140);
+        table.getColumnModel().getColumn(1).setPreferredWidth(120);
+        table.getColumnModel().getColumn(2).setPreferredWidth(90);
+        table.getColumnModel().getColumn(3).setPreferredWidth(110);
+
+        JScrollPane sp = new JScrollPane(table);
+        sp.setBackground(UIConstants.THEME_WHITE_BG);
+        sp.getViewport().setBackground(UIConstants.THEME_WHITE_BG);
+        sp.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(200, 200, 200)));
+        panel.add(sp, BorderLayout.CENTER);
         return panel;
     }
 
+    // ── Room Status panel ─────────────────────────────────────────────
     private JPanel createRoomStatusPanel() {
-        JPanel panel = new JPanel();
-        panel.setBackground(BG_CARD);
-        panel.setLayout(new BorderLayout());
-        panel.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1));
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(UIConstants.THEME_WHITE_BG);
+        panel.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
 
-        JLabel titleLabel = new JLabel("Room Status");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        titleLabel.setForeground(TEXT_WHITE);
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 15));
-        panel.add(titleLabel, BorderLayout.NORTH);
+        JLabel titleLbl = new JLabel("Room Status");
+        titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        titleLbl.setForeground(UIConstants.THEME_NAVY);
+        titleLbl.setBorder(BorderFactory.createEmptyBorder(16, 20, 12, 20));
+        panel.add(titleLbl, BorderLayout.NORTH);
 
-        JPanel statusGrid = new JPanel();
-        statusGrid.setBackground(BG_CARD);
-        statusGrid.setLayout(new GridLayout(2, 2, 15, 15));
-        statusGrid.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 30));
+        JPanel grid = new JPanel(new GridLayout(2, 2, 12, 12));
+        grid.setBackground(UIConstants.THEME_WHITE_BG);
+        grid.setBorder(BorderFactory.createEmptyBorder(8, 20, 20, 20));
 
-        statusGrid.add(createRoomStatusBox("20", "Occupied", new Color(220, 180, 80)));
-        statusGrid.add(createRoomStatusBox("20", "Available", new Color(100, 180, 100)));
-        statusGrid.add(createRoomStatusBox("20", "Cleaning", new Color(220, 150, 100)));
-        statusGrid.add(createRoomStatusBox("20", "Maintenance", new Color(220, 100, 100)));
+        int[] counts = loadRoomStatusCounts();
+        grid.add(createRoomBox(String.valueOf(counts[0]), "Occupied", UIConstants.ROOM_OCCUPIED));
+        grid.add(createRoomBox(String.valueOf(counts[1]), "Available", UIConstants.ROOM_AVAILABLE));
+        grid.add(createRoomBox(String.valueOf(counts[2]), "Cleaning", UIConstants.ROOM_CLEANING));
+        grid.add(createRoomBox(String.valueOf(counts[3]), "Maintenance", UIConstants.ROOM_MAINTENANCE));
 
-        panel.add(statusGrid, BorderLayout.CENTER);
+        panel.add(grid, BorderLayout.CENTER);
         return panel;
     }
 
-    private JPanel createRoomStatusBox(String number, String status, Color bgColor) {
-        JPanel box = new JPanel();
-        box.setBackground(bgColor);
-        box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
-        box.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
+    private JPanel createRoomBox(String number, String label, Color bg) {
+        JPanel box = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                        RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(bg);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                g2.dispose();
+            }
+        };
+        box.setOpaque(false);
 
-        JLabel numberLabel = new JLabel(number);
-        numberLabel.setFont(new Font("Arial", Font.BOLD, 32));
-        numberLabel.setForeground(Color.BLACK);
-        numberLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Inner panel holds the two labels, centered
+        JPanel inner = new JPanel();
+        inner.setOpaque(false);
+        inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
 
-        JLabel statusLabel = new JLabel(status);
-        statusLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        statusLabel.setForeground(Color.BLACK);
-        statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        statusLabel.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
+        JLabel numLbl = new JLabel(number);
+        numLbl.setFont(new Font("Segoe UI", Font.BOLD, 34));
+        numLbl.setForeground(Color.BLACK);
+        numLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        box.add(numberLabel);
-        box.add(statusLabel);
+        JLabel labLbl = new JLabel(label);
+        labLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        labLbl.setForeground(Color.BLACK);
+        labLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        labLbl.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
 
+        inner.add(numLbl);
+        inner.add(labLbl);
+
+        box.add(inner); // GridBagLayout centers inner by default
         return box;
     }
 
+    // ── Data loaders ──────────────────────────────────────────────────
+    private Object[][] loadBookingData() {
+        List<Booking> bookings = bookingService.getAllBookings();
+        int count = 0;
+        for (Booking b : bookings) {
+            String s = b.getStatus();
+            if (s.equalsIgnoreCase("pending") || s.equalsIgnoreCase("approved")
+                    || s.equalsIgnoreCase("checked in")) {
+                if (++count >= 6)
+                    break;
+            }
+        }
+        Object[][] data = new Object[count][4];
+        int i = 0;
+        for (Booking b : bookings) {
+            if (i >= count)
+                break;
+            String s = b.getStatus();
+            if (s.equalsIgnoreCase("pending") || s.equalsIgnoreCase("approved")
+                    || s.equalsIgnoreCase("checked in")) {
+                data[i][0] = "Guest #" + b.getCustomerId();
+                data[i][1] = "Room #" + b.getRoomId();
+                data[i][2] = b.getCheckInDate();
+                data[i][3] = b.getStatus();
+                i++;
+            }
+        }
+        return data;
+    }
+
+    private int[] loadRoomStatusCounts() {
+        int[] c = { 0, 0, 0, 0 };
+        for (Room r : roomService.getAllRooms()) {
+            if (r.isAvailable())
+                c[1]++;
+            else
+                c[0]++;
+        }
+        return c;
+    }
+
+    private int[] loadStatisticsData() {
+        int[] s = { 0, 0, 0, 0 };
+        String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        for (Booking b : bookingService.getAllBookings()) {
+            if ("pending".equalsIgnoreCase(b.getStatus()))
+                s[0]++;
+            if (today.equals(b.getCheckInDate()))
+                s[1]++;
+            if (today.equals(b.getCheckOutDate()))
+                s[2]++;
+        }
+        for (Room r : roomService.getAllRooms()) {
+            if (!r.isAvailable())
+                s[3]++;
+        }
+        return s;
+    }
+
+    // ── Date helpers ──────────────────────────────────────────────────
     private String getCurrentDate() {
-        LocalDateTime now = LocalDateTime.now();
-        return now.format(DateTimeFormatter.ofPattern("MMM d, yyyy"));
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM d, yyyy"));
     }
 
     private String getCurrentDateShort() {
-        LocalDateTime now = LocalDateTime.now();
-        return now.format(DateTimeFormatter.ofPattern("MMM d"));
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM d"));
     }
 
+    // ── Entry point ───────────────────────────────────────────────────
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            StaffDashboard dashboard = new StaffDashboard();
-            dashboard.setVisible(true);
+            User u = new User();
+            u.setUsername("staff1");
+            u.setName("John");
+            u.setEmail("staff@gmail.com");
+            new StaffDashboard(u).setVisible(true);
         });
     }
 }
