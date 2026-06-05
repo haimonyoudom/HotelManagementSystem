@@ -99,7 +99,6 @@ public class RoomStatusPanel extends JPanel {
 
         JScrollPane scroll = new JScrollPane(roomGrid);
         scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getViewport().setBackground(UIConstants.THEME_WHITE_BG);
         scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
         scroll.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 0));
         scroll.getVerticalScrollBar().setUnitIncrement(16);

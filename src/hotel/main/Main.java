@@ -512,11 +512,33 @@ public class Main {
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
+    private static void ensureDefaultStaff() {
+        try {
+            if (userDAO.getByUsername("staff1") == null) {
+                User staffUser = new User(
+                        0,
+                        "staff1",
+                        PasswordHasher.hash("staff123"),
+                        "staff",
+                        DateUtil.today());
+                userDAO.add(staffUser);
+
+                Staff staff = new Staff(0, "Staff One", "Receptionist", 0.0, staffUser.getId());
+                staffDAO.add(staff);
+
+                System.out.println("Default staff created -> staff1 / staff123");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to create default staff", e);
+        }
+    }
+
     private static void ensureDefaultAdmin() {
 
         createAdmin("admin", "admin123");
         createAdmin("admin2", "admin123");
         createAdmin("admin3", "admin123");
+        ensureDefaultStaff();
     }
 
     private static void createAdmin(String username, String password) {
