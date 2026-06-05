@@ -1,13 +1,12 @@
 package hotel.ui.staff;
 
-import hotel.ui.staff.*;
+import hotel.ui.common.LoginFrame;
 import hotel.ui.staff.util.UIConstants;
-import hotel.ui.staff.util.UIHelper;
-
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import hotel.model.User;
@@ -88,12 +87,16 @@ public class StaffDashboard extends JFrame {
         sectionLabel.setBorder(BorderFactory.createEmptyBorder(0, 18, 8, 0));
         sidebarPanel.add(sectionLabel);
 
-        // Simpler icon map using text symbols that render on most JVMs
-        String[] icons = { "⊞", "☑", "⌂", "▦" };
+        String[] iconPaths = {
+                "src/hotel/images/resources/dashboardicon.png",
+                "src/hotel/images/resources/bookingicon.png",
+                "src/hotel/images/resources/check-inicon.png",
+                "src/hotel/images/resources/roomicon.png"
+        };
         String[] labels = { "Dashboard", "Bookings", "Check-in/Out", "Rooms" };
 
         for (int i = 0; i < labels.length; i++) {
-            JButton btn = buildNavButton(icons[i], labels[i]);
+            JButton btn = buildNavButton(iconPaths[i], labels[i]);
             sidebarPanel.add(btn);
             if (i == 0) {
                 markActive(btn);
@@ -105,6 +108,50 @@ public class StaffDashboard extends JFrame {
 
         // ── User chip ────────────────────────────────────────────────
         sidebarPanel.add(buildUserChip());
+
+        // ── Logout button ─────────────────────────────────────────────
+        ImageIcon rawLogout = new ImageIcon("src/hotel/images/resources/logouticon.png");
+        BufferedImage scaledLogout = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = scaledLogout.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.drawImage(rawLogout.getImage(), 0, 0, 20, 20, null);
+        g2d.dispose();
+
+        JButton logoutBtn = new JButton("  Logout", new ImageIcon(scaledLogout));
+        logoutBtn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        logoutBtn.setForeground(new Color(180, 60, 60));
+        logoutBtn.setBackground(UIConstants.THEME_WHITE_BG);
+        logoutBtn.setHorizontalAlignment(SwingConstants.LEFT);
+        logoutBtn.setIconTextGap(10);
+        logoutBtn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(220, 220, 220)),
+                BorderFactory.createEmptyBorder(10, 18, 10, 18)));
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setContentAreaFilled(false);
+        logoutBtn.setOpaque(true);
+        logoutBtn.setHorizontalAlignment(SwingConstants.LEFT);
+        logoutBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        logoutBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        logoutBtn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                logoutBtn.setBackground(new Color(255, 240, 240));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                logoutBtn.setBackground(UIConstants.THEME_WHITE_BG);
+            }
+        });
+
+        logoutBtn.addActionListener(e -> {
+            dispose();
+            SwingUtilities.invokeLater(() -> new hotel.ui.common.LoginFrame().setVisible(true));
+        });
+
+        sidebarPanel.add(logoutBtn);
 
         add(sidebarPanel, BorderLayout.WEST);
     }
@@ -143,22 +190,24 @@ public class StaffDashboard extends JFrame {
         inner.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
 
         // Icon box
-        JLabel iconBox = new JLabel(icon) {
+        JLabel iconBox = new JLabel() {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                         RenderingHints.VALUE_ANTIALIAS_ON);
-                // Semi-transparent white box behind icon
                 g2.setColor(new Color(255, 255, 255, 25));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 g2.dispose();
                 super.paintComponent(g);
             }
         };
+
+        // Load and scale the image
+        ImageIcon rawIcon = new ImageIcon(icon); // 'icon' is the path string
+        Image scaled = rawIcon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+        iconBox.setIcon(new ImageIcon(scaled));
         iconBox.setOpaque(false);
-        iconBox.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 15));
-        iconBox.setForeground(new Color(200, 200, 200));
         iconBox.setHorizontalAlignment(SwingConstants.CENTER);
         iconBox.setVerticalAlignment(SwingConstants.CENTER);
         Dimension iconSize = new Dimension(32, 32);
@@ -236,6 +285,7 @@ public class StaffDashboard extends JFrame {
                 break;
         }
 
+        panel.setOpaque(true);
         cp.add(panel, BorderLayout.CENTER);
         cp.revalidate();
         cp.repaint();
@@ -270,7 +320,7 @@ public class StaffDashboard extends JFrame {
         btn.repaint();
     }
 
-    // ── User chip (bottom of sidebar) ─────────────────────────────────
+    // ── User chip ─────────────────────────────────
     private JPanel buildUserChip() {
         JPanel chip = new JPanel();
         chip.setBackground(new Color(245, 245, 245));
@@ -281,13 +331,11 @@ public class StaffDashboard extends JFrame {
                 BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(220, 220, 220)),
                 BorderFactory.createEmptyBorder(12, 14, 12, 14)));
 
-        // Circular avatar
         JLabel avatar = new JLabel("ST") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                        RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(UIConstants.THEME_NAVY);
                 g2.fillOval(0, 0, getWidth(), getHeight());
                 g2.dispose();
@@ -321,6 +369,7 @@ public class StaffDashboard extends JFrame {
         chip.add(avatar);
         chip.add(Box.createHorizontalStrut(10));
         chip.add(info);
+
         return chip;
     }
 
@@ -368,8 +417,18 @@ public class StaffDashboard extends JFrame {
         dateLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         dateLbl.setForeground(UIConstants.THEME_DARK_FONT);
 
-        JLabel bell = new JLabel("  \uD83D\uDD14");
-        bell.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        // load notification icon
+        ImageIcon rawBell = new ImageIcon("src/hotel/images/resources/notificationicon.png");
+        BufferedImage scaledBell = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = scaledBell.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.drawImage(rawBell.getImage(), 0, 0, 20, 20, null);
+        g2d.dispose();
+
+        JLabel bell = new JLabel(new ImageIcon(scaledBell));
+        bell.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         right.add(dateLbl);
         right.add(bell);

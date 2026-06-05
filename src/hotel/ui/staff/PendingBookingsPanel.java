@@ -12,6 +12,8 @@ import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.util.EventObject;
 import java.util.List;
 import java.sql.SQLException;
 
@@ -42,7 +44,7 @@ public class PendingBookingsPanel extends JPanel {
         loadBookingsData();
     }
 
-    // ── Header section ────────────────────────────────────────────────
+    // ── Header ────────────────────────────────────────────────────────
     private JPanel buildHeader() {
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(UIConstants.THEME_WHITE_BG);
@@ -55,7 +57,6 @@ public class PendingBookingsPanel extends JPanel {
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         controls.setBackground(UIConstants.THEME_WHITE_BG);
 
-        // Filter field
         filterField = new JTextField(15);
         filterField.setText("Filter bookings...");
         filterField.setFont(UIConstants.FONT_BODY);
@@ -83,23 +84,21 @@ public class PendingBookingsPanel extends JPanel {
         });
 
         controls.add(filterField);
-
         header.add(titleLbl, BorderLayout.WEST);
         header.add(controls, BorderLayout.EAST);
         return header;
     }
 
-    // ── Content section (table) ───────────────────────────────────────
+    // ── Content ───────────────────────────────────────────────────────
     private JPanel buildContent() {
         JPanel content = new JPanel(new BorderLayout());
         content.setBackground(UIConstants.THEME_WHITE_BG);
 
-        // Create table
         String[] columns = { "Booking ID", "Guest Name", "Room Type", "Check-in", "Check-out", "Status", "Actions" };
         tableModel = new DefaultTableModel(new Object[][] {}, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return column == 6; // Only Actions column is editable (for button clicks)
             }
         };
 
@@ -107,19 +106,17 @@ public class PendingBookingsPanel extends JPanel {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 Component c = super.prepareRenderer(renderer, row, column);
-                if (column == 6) { // Actions column
-                    return c; // Custom renderer handled below
-                }
-                c.setBackground(UIConstants.THEME_WHITE_BG);
-                c.setForeground(UIConstants.THEME_DARK_FONT);
-                if (isCellSelected(row, column)) {
-                    c.setBackground(new Color(220, 230, 255));
+                if (column != 6) {
+                    c.setBackground(UIConstants.THEME_WHITE_BG);
+                    c.setForeground(UIConstants.THEME_DARK_FONT);
+                    if (isCellSelected(row, column)) {
+                        c.setBackground(new Color(220, 230, 255));
+                    }
                 }
                 return c;
             }
         };
 
-        // Style table
         bookingsTable.setFont(UIConstants.FONT_BODY);
         bookingsTable.setRowHeight(44);
         bookingsTable.setBackground(UIConstants.THEME_WHITE_BG);
@@ -128,7 +125,6 @@ public class PendingBookingsPanel extends JPanel {
         bookingsTable.setSelectionBackground(new Color(220, 230, 255));
         bookingsTable.setSelectionForeground(UIConstants.THEME_DARK_FONT);
 
-        // Header styling
         JTableHeader header = bookingsTable.getTableHeader();
         header.setBackground(UIConstants.THEME_WHITE_BG);
         header.setForeground(UIConstants.THEME_NAVY);
@@ -136,12 +132,13 @@ public class PendingBookingsPanel extends JPanel {
         header.setPreferredSize(new Dimension(0, 40));
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)));
 
-        // Actions column renderer
-        bookingsTable.getColumn("Actions").setCellRenderer(new ActionCellRenderer());
-        bookingsTable.getColumn("Actions").setWidth(150);
-        bookingsTable.getColumn("Actions").setPreferredWidth(150);
+        // Wire both renderer AND editor to the Actions column
+        TableColumn actionsCol = bookingsTable.getColumn("Actions");
+        actionsCol.setCellRenderer(new ActionCellRenderer());
+        actionsCol.setCellEditor(new ActionCellEditor());
+        actionsCol.setPreferredWidth(150);
+        actionsCol.setWidth(150);
 
-        // Set column widths
         bookingsTable.getColumn("Booking ID").setPreferredWidth(80);
         bookingsTable.getColumn("Guest Name").setPreferredWidth(120);
         bookingsTable.getColumn("Room Type").setPreferredWidth(100);
@@ -149,7 +146,6 @@ public class PendingBookingsPanel extends JPanel {
         bookingsTable.getColumn("Check-out").setPreferredWidth(90);
         bookingsTable.getColumn("Status").setPreferredWidth(80);
 
-        // Scroll pane
         JScrollPane scrollPane = new JScrollPane(bookingsTable);
         scrollPane.setBackground(UIConstants.THEME_WHITE_BG);
         scrollPane.getViewport().setBackground(UIConstants.THEME_WHITE_BG);
@@ -159,7 +155,7 @@ public class PendingBookingsPanel extends JPanel {
         return content;
     }
 
-    // ── Footer section (pagination) ───────────────────────────────────
+    // ── Footer ────────────────────────────────────────────────────────
     private JPanel buildFooter() {
         JPanel footer = new JPanel(new BorderLayout());
         footer.setBackground(UIConstants.THEME_WHITE_BG);
@@ -172,11 +168,13 @@ public class PendingBookingsPanel extends JPanel {
         JPanel paginationButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
         paginationButtons.setBackground(UIConstants.THEME_WHITE_BG);
 
-        JButton prevBtn = createPaginationButton("◀", e -> previousPage());
+        JButton prevBtn = createPaginationButtonWithIcon("src/hotel/images/resources/backarrowicon.png",
+                e -> previousPage());
         JButton pageBtn1 = createPaginationButton("1", e -> goToPage(0));
         JButton pageBtn2 = createPaginationButton("2", e -> goToPage(1));
         JButton pageBtn3 = createPaginationButton("3", e -> goToPage(2));
-        JButton nextBtn = createPaginationButton("▶", e -> nextPage());
+        JButton nextBtn = createPaginationButtonWithIcon("src/hotel/images/resources/nextarrowicon.png",
+                e -> nextPage());
 
         paginationButtons.add(prevBtn);
         paginationButtons.add(pageBtn1);
@@ -187,6 +185,22 @@ public class PendingBookingsPanel extends JPanel {
         footer.add(pageInfoLabel, BorderLayout.WEST);
         footer.add(paginationButtons, BorderLayout.EAST);
         return footer;
+    }
+
+    private JButton createPaginationButtonWithIcon(String iconPath, ActionListener action) {
+        ImageIcon rawIcon = new ImageIcon(iconPath);
+        BufferedImage scaledImg = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = scaledImg.createGraphics();
+        g2d.drawImage(rawIcon.getImage(), 0, 0, 20, 20, null);
+        g2d.dispose();
+
+        JButton btn = new JButton(new ImageIcon(scaledImg));
+        btn.setBackground(new Color(245, 245, 245));
+        btn.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        btn.setFocusPainted(false);
+        btn.setPreferredSize(new Dimension(36, 30));
+        btn.addActionListener(action);
+        return btn;
     }
 
     private JButton createPaginationButton(String text, ActionListener action) {
@@ -205,43 +219,39 @@ public class PendingBookingsPanel extends JPanel {
     private void loadBookingsData() {
         try {
             List<Booking> bookings = bookingService.getAllBookings();
-
             tableModel.setRowCount(0);
 
             for (Booking booking : bookings) {
+                // Only show pending bookings
+                if (!"pending".equalsIgnoreCase(booking.getStatus()))
+                    continue;
                 String customerName = "N/A";
                 String roomType = "N/A";
 
                 try {
                     Customer customer = customerDAO.getById(booking.getCustomerId());
-                    if (customer != null) {
+                    if (customer != null)
                         customerName = customer.getName();
-                    }
                 } catch (SQLException e) {
-                    // Use default N/A
-                }
+                    /* keep N/A */ }
 
                 try {
                     Room room = roomDAO.getById(booking.getRoomId());
-                    if (room != null) {
+                    if (room != null)
                         roomType = room.getType();
-                    }
                 } catch (SQLException e) {
-                    // Use default N/A
-                }
+                    /* keep N/A */ }
 
-                Object[] row = {
+                tableModel.addRow(new Object[] {
                         booking.getId(),
                         customerName,
                         roomType,
                         booking.getCheckInDate() != null ? booking.getCheckInDate() : "N/A",
                         booking.getCheckOutDate() != null ? booking.getCheckOutDate() : "N/A",
-                        getStatusBadge(booking.getStatus()),
+                        booking.getStatus() != null ? booking.getStatus() : "pending",
                         "ACTIONS"
-                };
-                tableModel.addRow(row);
+                });
             }
-
             updatePageInfo();
         } catch (Exception e) {
             e.printStackTrace();
@@ -249,15 +259,11 @@ public class PendingBookingsPanel extends JPanel {
         }
     }
 
-    private String getStatusBadge(String status) {
-        return status != null ? status : "PENDING";
-    }
-
     private void updatePageInfo() {
         int total = tableModel.getRowCount();
         int start = currentPage * pageSize + 1;
         int end = Math.min((currentPage + 1) * pageSize, total);
-        pageInfoLabel.setText(String.format("Showing %d-%d of %d pending bookings", start, end, total));
+        pageInfoLabel.setText(String.format("Showing %d-%d of %d bookings", start, end, total));
     }
 
     private void previousPage() {
@@ -280,41 +286,123 @@ public class PendingBookingsPanel extends JPanel {
         updatePageInfo();
     }
 
-    // ── Custom cell renderer for actions ──────────────────────────────
-    private class ActionCellRenderer extends JPanel implements TableCellRenderer {
-        private JButton approveBtn;
-        private JButton rejectBtn;
+    // ── Approve / Reject logic ────────────────────────────────────────
+    private void handleApprove(int row) {
+        int bookingId = (int) tableModel.getValueAt(row, 0);
+        boolean success = bookingService.confirmBooking(bookingId);
+        if (success) {
+            tableModel.removeRow(row);
+            updatePageInfo();
+            JOptionPane.showMessageDialog(this,
+                    "Booking #" + bookingId + " has been confirmed.",
+                    "Approved", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Could not confirm booking #" + bookingId + ".",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
-        public ActionCellRenderer() {
+    private void handleReject(int row) {
+        int bookingId = (int) tableModel.getValueAt(row, 0);
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Cancel booking #" + bookingId + "?",
+                "Confirm Rejection", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            boolean success = bookingService.cancelBooking(bookingId);
+            if (success) {
+                tableModel.removeRow(row);
+                updatePageInfo();
+                JOptionPane.showMessageDialog(this,
+                        "Booking #" + bookingId + " has been cancelled.",
+                        "Rejected", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Could not cancel booking #" + bookingId + ".",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    // ── Renderer ──────────────────────────────────────────────────────
+    private class ActionCellRenderer extends JPanel implements TableCellRenderer {
+        private final JButton approveBtn = makeBtn("Approve", UIConstants.ACCENT_GREEN);
+        private final JButton rejectBtn = makeBtn("Reject", UIConstants.ACCENT_RED);
+
+        ActionCellRenderer() {
             setLayout(new FlowLayout(FlowLayout.CENTER, 6, 0));
             setOpaque(true);
-
-            approveBtn = new JButton("Approve");
-            approveBtn.setFont(UIConstants.FONT_SMALL);
-            approveBtn.setBackground(UIConstants.ACCENT_GREEN);
-            approveBtn.setForeground(Color.WHITE);
-            approveBtn.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
-            approveBtn.setFocusPainted(false);
-
-            rejectBtn = new JButton("Reject");
-            rejectBtn.setFont(UIConstants.FONT_SMALL);
-            rejectBtn.setBackground(UIConstants.ACCENT_RED);
-            rejectBtn.setForeground(Color.WHITE);
-            rejectBtn.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
-            rejectBtn.setFocusPainted(false);
-
             add(approveBtn);
             add(rejectBtn);
         }
 
         @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                boolean hasFocus, int row, int column) {
-            setBackground(UIConstants.THEME_WHITE_BG);
-            if (isSelected) {
-                setBackground(new Color(220, 230, 255));
-            }
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            setBackground(isSelected ? new Color(220, 230, 255) : UIConstants.THEME_WHITE_BG);
             return this;
+        }
+
+        private JButton makeBtn(String text, Color bg) {
+            JButton btn = new JButton(text);
+            btn.setFont(UIConstants.FONT_SMALL);
+            btn.setBackground(bg);
+            btn.setForeground(Color.WHITE);
+            btn.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
+            btn.setFocusPainted(false);
+            return btn;
+        }
+    }
+
+    // ── Editor (handles actual clicks) ───────────────────────────────
+    private class ActionCellEditor extends AbstractCellEditor implements TableCellEditor {
+        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
+        private final JButton approveBtn = makeBtn("Approve", UIConstants.ACCENT_GREEN);
+        private final JButton rejectBtn = makeBtn("Reject", UIConstants.ACCENT_RED);
+        private int currentRow;
+
+        ActionCellEditor() {
+            panel.setOpaque(true);
+            panel.add(approveBtn);
+            panel.add(rejectBtn);
+
+            approveBtn.addActionListener(e -> {
+                fireEditingStopped();
+                handleApprove(currentRow);
+            });
+
+            rejectBtn.addActionListener(e -> {
+                fireEditingStopped();
+                handleReject(currentRow);
+            });
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                boolean isSelected, int row, int column) {
+            currentRow = row;
+            panel.setBackground(isSelected ? new Color(220, 230, 255) : UIConstants.THEME_WHITE_BG);
+            return panel;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return "ACTIONS";
+        }
+
+        @Override
+        public boolean isCellEditable(EventObject e) {
+            return true;
+        }
+
+        private JButton makeBtn(String text, Color bg) {
+            JButton btn = new JButton(text);
+            btn.setFont(UIConstants.FONT_SMALL);
+            btn.setBackground(bg);
+            btn.setForeground(Color.WHITE);
+            btn.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
+            btn.setFocusPainted(false);
+            return btn;
         }
     }
 }
