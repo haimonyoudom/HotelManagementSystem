@@ -214,6 +214,8 @@ public class CheckInOutPanel extends JPanel {
         JScrollPane scroll = new JScrollPane(scheduleTable);
         scroll.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
         scroll.getViewport().setBackground(Color.WHITE);
+        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
+        scroll.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 0));
 
         panel.add(hdr, BorderLayout.NORTH);
         panel.add(scroll, BorderLayout.CENTER);

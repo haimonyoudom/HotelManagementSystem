@@ -26,7 +26,6 @@ public class RoomStatusPanel extends JPanel {
         this.roomDAO = new RoomDAO();
         setLayout(new BorderLayout());
         setBackground(UIConstants.THEME_WHITE_BG);
-        setOpaque(true);
         setBorder(BorderFactory.createEmptyBorder(20, 30, 30, 30));
 
         add(buildHeader(), BorderLayout.NORTH);
@@ -95,13 +94,31 @@ public class RoomStatusPanel extends JPanel {
 
         content.add(buildFilterBar(), BorderLayout.NORTH);
 
-        roomGrid = new JPanel(new GridLayout(0, 5, 14, 14));
+        roomGrid = new JPanel(new GridLayout(0, 4, 14, 14));
         roomGrid.setBackground(UIConstants.THEME_WHITE_BG);
 
         JScrollPane scroll = new JScrollPane(roomGrid);
         scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.getViewport().setBackground(UIConstants.THEME_WHITE_BG);
-        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
+        scroll.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 0));
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        // Dynamically adjust columns based on available width
+        scroll.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                int width = scroll.getViewport().getWidth();
+                int cardWidth = 184; // card width + gap
+                int cols = Math.max(1, width / cardWidth);
+                GridLayout gl = (GridLayout) roomGrid.getLayout();
+                if (gl.getColumns() != cols) {
+                    gl.setColumns(cols);
+                    roomGrid.revalidate();
+                    roomGrid.repaint();
+                }
+            }
+        });
 
         content.add(scroll, BorderLayout.CENTER);
 
