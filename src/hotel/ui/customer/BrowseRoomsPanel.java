@@ -7,13 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
 
-// BrowseRoomsPanel: UI for browsing/filtering room cards
-// - Shows filter chips, room count, and a grid of room cards with booking actions.
-// - Uses shared theme tokens from CustomerDashboard for consistent look.
-
 public class BrowseRoomsPanel extends JPanel {
 
-    // ── Data ─────────────────────────────────────────────────────────────────
+    // ── Data ──────────────────────────────────────────────────────────────────
     private static final String[] FILTERS = {
         "All Types", "Standard", "Deluxe", "Suite", "Family"
     };
@@ -33,22 +29,22 @@ public class BrowseRoomsPanel extends JPanel {
         "/hotel/images/resources/hotel1.jpg",
     };
 
-    // ── Palette ──────────────────────────────────────────────────────────────
-private static final Color C_PAGE_BG  = new Color(250, 250, 250); // page bg (light)
-private static final Color C_BOX_BG   = new Color(255, 255, 255); // box (card) background
-private static final Color C_CARD_BG  = new Color(255, 255, 255); // card bg
-private static final Color C_CARD_HOV = new Color(245, 245, 255); // hover subtle
-private static final Color C_BORDER   = new Color(230, 230, 230); // BORDER_COLOR
-private static final Color C_ORANGE   = new Color(249, 115, 22);   // orange accent
-private static final Color C_ORANGE_H = new Color(255, 240, 230);  // orange hover bg
-private static final Color C_BADGE_BG = new Color(255, 244, 230);  // orange dim
-private static final Color C_IMG_TOP  = new Color(245, 245, 255);  // card img top gradient
-private static final Color C_IMG_BOT  = new Color(250, 250, 255);  // card img bottom gradient
-private static final Color C_WHITE    = new Color(20, 20, 20);      // text dark for light bg
-private static final Color C_GRAY     = new Color(100, 100, 100);   // text gray
-private static final Color C_MUTED    = new Color(140, 140, 140);   // muted
+    // ── Palette ───────────────────────────────────────────────────────────────
+    private static final Color C_PAGE_BG  = new Color(250, 250, 250);
+    private static final Color C_BOX_BG   = new Color(255, 255, 255);
+    private static final Color C_CARD_BG  = new Color(255, 255, 255);
+    private static final Color C_CARD_HOV = new Color(245, 245, 255);
+    private static final Color C_BORDER   = new Color(230, 230, 230);
+    private static final Color C_ORANGE   = new Color(249, 115,  22);
+    private static final Color C_ORANGE_H = new Color(255, 240, 230);
+    private static final Color C_BADGE_BG = new Color(255, 244, 230);
+    private static final Color C_IMG_TOP  = new Color(245, 245, 255);
+    private static final Color C_IMG_BOT  = new Color(250, 250, 255);
+    private static final Color C_TEXT     = new Color( 20,  20,  20);
+    private static final Color C_GRAY     = new Color(100, 100, 100);
+    private static final Color C_MUTED    = new Color(140, 140, 140);
 
-    // ── Fonts ────────────────────────────────────────────────────────────────
+    // ── Fonts ─────────────────────────────────────────────────────────────────
     private static final Font F_TITLE = new Font("Segoe UI", Font.BOLD,  20);
     private static final Font F_SUB   = new Font("Segoe UI", Font.PLAIN, 12);
     private static final Font F_COUNT = new Font("Segoe UI", Font.PLAIN, 11);
@@ -59,15 +55,14 @@ private static final Color C_MUTED    = new Color(140, 140, 140);   // muted
     private static final Font F_BADGE = new Font("Segoe UI", Font.BOLD,   9);
     private static final Font F_BTN   = new Font("Segoe UI", Font.BOLD,  12);
 
-    // ── Layout constants ─────────────────────────────────────────────────────
-    private static final int COLS   = 4;
-    private static final int CARD_H = 238;
+    // ── Card dimensions ───────────────────────────────────────────────────────
+    private static final int COLS       = 4;
+    private static final int CARD_H     = 238;
     private static final int MIN_CARD_W = 260;
-    private static final int IMG_H  = 118;
-    private static final int GAP    = 12;
-    private static final int PAD    = 20;
+    private static final int IMG_H      = 118;
+    private static final int GAP        = 12;
 
-    // ── Mutable state ────────────────────────────────────────────────────────
+    // ── State ─────────────────────────────────────────────────────────────────
     private String       activeFilter = "All Types";
     private JPanel       cardsPanel;
     private JLabel       countLbl;
@@ -75,121 +70,123 @@ private static final Color C_MUTED    = new Color(140, 140, 140);   // muted
 
     // =========================================================================
     public BrowseRoomsPanel() {
-        setLayout(null);
-        setBounds(0, 0, W, H);
+        // This panel IS the card — BorderLayout with topbar NORTH, content CENTER
+        setLayout(new BorderLayout());
         setBackground(C_PAGE_BG);
         build();
     }
 
-    // ── Build UI ─────────────────────────────────────────────────────────────
+    // ── Build the panel ───────────────────────────────────────────────────────
     private void build() {
-        addTopbar(this, "Rooms", "Apr 29, 2026");
-        addSidebar(this, "rooms");
+        // NORTH: topbar (reuses CustomerDashboard.buildTopbar)
+        add(buildTopbar("ROOMS"), BorderLayout.NORTH);
 
-        int cx = CONTENT_X + PAD;
-        int cy = CONTENT_Y + PAD;
-        int cw = CONTENT_W - PAD * 2;
-        int ch = CONTENT_H - PAD * 2;
+        // CENTER: scrollable content wrapper
+        JPanel contentWrapper = new JPanel(new BorderLayout());
+        contentWrapper.setBackground(C_PAGE_BG);
+        contentWrapper.setBorder(BorderFactory.createEmptyBorder(16, 24, 24, 24));
+        add(contentWrapper, BorderLayout.CENTER);
 
-        // Outer rounded box
-        JPanel content = new JPanel(null) {
-            @Override
-            protected void paintComponent(Graphics g) {
+        // Inner box with rounded border paint
+        JPanel box = new JPanel(new BorderLayout(0, 14)) {
+            @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(C_BOX_BG);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
                 g2.setColor(C_BORDER);
                 g2.setStroke(new BasicStroke(1f));
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 10, 10);
                 g2.dispose();
             }
         };
-        content.setOpaque(false);
-        content.setBounds(cx, cy, cw, ch);
-        add(content);
+        box.setOpaque(false);
+        box.setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
+        contentWrapper.add(box, BorderLayout.CENTER);
 
-        int iy = PAD;
+        // ── Header section (title + subtitle + count + filter chips) ──────────
+        JPanel header = new JPanel();
+        header.setOpaque(false);
+        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
 
-        // Title
         JLabel title = makeLabel("Rooms", F_TITLE, C_ORANGE);
-        title.setBounds(PAD, iy, 260, 24);
-        content.add(title);
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+        header.add(title);
+        header.add(Box.createVerticalStrut(4));
 
-        // Subtitle
         JLabel sub = makeLabel("Find your perfect room", F_SUB, C_GRAY);
-        sub.setBounds(PAD, iy + 27, 300, 16);
-        content.add(sub);
+        sub.setAlignmentX(Component.LEFT_ALIGNMENT);
+        header.add(sub);
+        header.add(Box.createVerticalStrut(4));
 
-        // Count
         countLbl = makeLabel(countText(), F_COUNT, C_MUTED);
-        countLbl.setBounds(PAD, iy + 46, 220, 14);
-        content.add(countLbl);
+        countLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        header.add(countLbl);
+        header.add(Box.createVerticalStrut(12));
 
-        iy += 72;
-
-        // Filter chips
+        // Filter chips row (FlowLayout so they wrap naturally)
+        JPanel chipsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        chipsRow.setOpaque(false);
+        chipsRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         chips = new FilterChip[FILTERS.length];
-        int fx = PAD;
-        FontMetrics fm = Toolkit.getDefaultToolkit().getFontMetrics(F_CHIP);
+        FontMetrics fm = getFontMetrics(F_CHIP);
         for (int i = 0; i < FILTERS.length; i++) {
             final String f = FILTERS[i];
             FilterChip chip = new FilterChip(f, f.equals(activeFilter));
-            int chipW = fm.stringWidth(f) + 36;
-            chip.setBounds(fx, iy, chipW, 26);
+            chip.setPreferredSize(new Dimension(fm.stringWidth(f) + 36, 26));
             chip.addActionListener(e -> onFilter(f));
             chips[i] = chip;
-            content.add(chip);
-            fx += chipW + 8;
+            chipsRow.add(chip);
         }
+        header.add(chipsRow);
 
-        iy += 26 + 16;
+        box.add(header, BorderLayout.NORTH);
 
-        // Cards area
-        int cardsW = cw - PAD * 2;
+        // ── Cards area (GridLayout, inside a scroll pane) ─────────────────────
         cardsPanel = new JPanel(new GridLayout(0, COLS, GAP, GAP));
         cardsPanel.setOpaque(false);
-        cardsPanel.setBounds(PAD, iy, cardsW, CARD_H + GAP);
-        cardsPanel.addComponentListener(new ComponentAdapter() {
-            @Override public void componentResized(ComponentEvent e) {
-                SwingUtilities.invokeLater(() -> renderCards());
-            }
-        });
-        content.add(cardsPanel);
+
+        // Wrap in a fixed-height panel so cards don't stretch vertically
+        JPanel cardsWrapper = new JPanel(new BorderLayout());
+        cardsWrapper.setOpaque(false);
+        cardsWrapper.add(cardsPanel, BorderLayout.NORTH);
+
+        JScrollPane scroll = new JScrollPane(cardsWrapper);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
+        box.add(scroll, BorderLayout.CENTER);
 
         renderCards();
     }
 
-    // ── Render cards ─────────────────────────────────────────────────────────
+    // ── Render room cards ─────────────────────────────────────────────────────
     private void renderCards() {
         cardsPanel.removeAll();
 
         List<Integer> visible = new ArrayList<>();
         for (int i = 0; i < ROOMS.length; i++) {
-            if (activeFilter.equals("All Types") || ((String) ROOMS[i][1]).equals(activeFilter)) {
+            if (activeFilter.equals("All Types") || ((String) ROOMS[i][1]).equals(activeFilter))
                 visible.add(i);
-            }
         }
 
         if (visible.isEmpty()) {
+            cardsPanel.setLayout(new BorderLayout());
             JLabel empty = makeLabel("No rooms match \"" + activeFilter + "\"", F_SUB, C_MUTED);
             empty.setHorizontalAlignment(SwingConstants.CENTER);
-            cardsPanel.setLayout(new BorderLayout());
             cardsPanel.add(empty, BorderLayout.CENTER);
         } else {
-            int availableW = cardsPanel.getWidth();
-            int columns = Math.max(1, Math.min(COLS, availableW / (MIN_CARD_W + GAP)));
-            cardsPanel.setLayout(new GridLayout(0, columns, GAP, GAP));
+            cardsPanel.setLayout(new GridLayout(0, COLS, GAP, GAP));
             for (int idx : visible) {
                 Object[] r = ROOMS[idx];
-                JPanel card = buildCard(
-                    (String) r[0],
-                    (String) r[2],
-                    (String) r[3],
-                    (String) r[4],
+                cardsPanel.add(buildCard(
+                    (String) r[0], (String) r[2],
+                    (String) r[3], (String) r[4],
                     ROOM_IMAGES[idx]
-                );
-                cardsPanel.add(card);
+                ));
             }
         }
 
@@ -197,9 +194,9 @@ private static final Color C_MUTED    = new Color(140, 140, 140);   // muted
         cardsPanel.repaint();
     }
 
-    // ── Single card ───────────────────────────────────────────────────────────
+    // ── Single room card ──────────────────────────────────────────────────────
     private JPanel buildCard(String name, String desc, String price, String badge, String imagePath) {
-        JPanel card = new JPanel(new BorderLayout(0, 12)) {
+        JPanel card = new JPanel(new BorderLayout(0, 0)) {
             private boolean hov = false;
             {
                 addMouseListener(new MouseAdapter() {
@@ -207,26 +204,24 @@ private static final Color C_MUTED    = new Color(140, 140, 140);   // muted
                     @Override public void mouseExited (MouseEvent e) { hov = false; repaint(); }
                 });
             }
-            @Override
-            protected void paintComponent(Graphics g) {
+            @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(hov ? C_CARD_HOV : C_CARD_BG);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
                 g2.setColor(hov ? C_ORANGE : C_BORDER);
                 g2.setStroke(new BasicStroke(1f));
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 10, 10);
                 g2.dispose();
             }
         };
         card.setOpaque(false);
         card.setPreferredSize(new Dimension(MIN_CARD_W, CARD_H));
 
-        // Image
+        // ── Image area ────────────────────────────────────────────────────────
         JPanel img = new JPanel(new BorderLayout()) {
-            private Image photo = loadRoomImage(imagePath);
-            @Override
-            protected void paintComponent(Graphics g) {
+            private final Image photo = loadRoomImage(imagePath);
+            @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 if (photo != null) {
@@ -243,23 +238,22 @@ private static final Color C_MUTED    = new Color(140, 140, 140);   // muted
         img.setPreferredSize(new Dimension(0, IMG_H));
         img.setMinimumSize(new Dimension(0, IMG_H));
         img.setMaximumSize(new Dimension(Integer.MAX_VALUE, IMG_H));
+
+        // Badge in image top-right
         JPanel badgeWrap = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
         badgeWrap.setOpaque(false);
         img.add(badgeWrap, BorderLayout.NORTH);
 
-        // Badge
         FontMetrics bfm = getFontMetrics(F_BADGE);
-        int bw = bfm.stringWidth(badge) + 14;
         JLabel bdg = new JLabel(badge, SwingConstants.CENTER) {
-            @Override
-            protected void paintComponent(Graphics g) {
+            @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(C_BADGE_BG);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 g2.setColor(C_ORANGE);
                 g2.setStroke(new BasicStroke(1f));
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 8, 8);
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -267,71 +261,68 @@ private static final Color C_MUTED    = new Color(140, 140, 140);   // muted
         bdg.setFont(F_BADGE);
         bdg.setForeground(C_ORANGE);
         bdg.setOpaque(false);
-        bdg.setPreferredSize(new Dimension(bw, 16));
+        bdg.setPreferredSize(new Dimension(bfm.stringWidth(badge) + 14, 16));
         badgeWrap.add(bdg);
+
         card.add(img, BorderLayout.NORTH);
 
-        // Text info
-        JPanel infoPanel = new JPanel();
-        infoPanel.setOpaque(false);
-        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        // ── Info area (BoxLayout Y_AXIS with padding) ─────────────────────────
+        JPanel info = new JPanel();
+        info.setOpaque(false);
+        info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
+        info.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
 
-        JLabel nameLbl = makeLabel(name,  F_CNAME, C_WHITE);
+        JLabel nameLbl = makeLabel(name,  F_CNAME, C_TEXT);
         nameLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        infoPanel.add(nameLbl);
-        infoPanel.add(Box.createRigidArea(new Dimension(0, 6)));
+        info.add(nameLbl);
+        info.add(Box.createVerticalStrut(4));
 
         JLabel descLbl = makeLabel(desc,  F_CDESC, C_GRAY);
         descLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        infoPanel.add(descLbl);
-        infoPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        info.add(descLbl);
+        info.add(Box.createVerticalStrut(8));
 
         JLabel priceLbl = makeLabel(price, F_PRICE, C_ORANGE);
         priceLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-        infoPanel.add(priceLbl);
-        infoPanel.add(Box.createVerticalGlue());
+        info.add(priceLbl);
+        info.add(Box.createVerticalGlue());
+        info.add(Box.createVerticalStrut(10));
 
-        BookingBtn btn = new BookingBtn("Booking");
+        BookingBtn btn = new BookingBtn("Book Now");
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        btn.setPreferredSize(new Dimension(Integer.MAX_VALUE, 30));
         btn.addActionListener(e -> {
             BookingPanel.selectBookingRoom(name, price);
             CustomerDashboard.switchTo("booking");
         });
-        infoPanel.add(Box.createRigidArea(new Dimension(0, 14)));
-        infoPanel.add(btn);
-        infoPanel.add(Box.createRigidArea(new Dimension(0, 4)));
+        info.add(btn);
 
-        card.add(infoPanel, BorderLayout.CENTER);
-
+        card.add(info, BorderLayout.CENTER);
         return card;
     }
 
     // ── Filter handler ────────────────────────────────────────────────────────
     private void onFilter(String f) {
         activeFilter = f;
-        for (FilterChip c : chips) {
+        for (FilterChip c : chips)
             c.setActive(c.getText().equals(f));
-        }
         countLbl.setText(countText());
         renderCards();
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
     private static Image loadRoomImage(String path) {
         try {
             java.net.URL url = BrowseRoomsPanel.class.getResource(path);
-            if (url == null) return null;
-            return new ImageIcon(url).getImage();
-        } catch (Exception e) {
-            return null;
-        }
+            return url == null ? null : new ImageIcon(url).getImage();
+        } catch (Exception e) { return null; }
     }
 
     private String countText() {
         int n = 0;
-        for (Object[] r : ROOMS) {
+        for (Object[] r : ROOMS)
             if (activeFilter.equals("All Types") || ((String) r[1]).equals(activeFilter)) n++;
-        }
         return n + (n == 1 ? " available room" : " available rooms");
     }
 
@@ -363,16 +354,15 @@ private static final Color C_MUTED    = new Color(140, 140, 140);   // muted
             repaint();
         }
 
-        @Override
-        protected void paintComponent(Graphics g) {
+        @Override protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(active ? C_ORANGE : BG_CARD);
+            g2.setColor(active ? C_ORANGE : C_CARD_BG);
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
             if (!active) {
                 g2.setColor(C_BORDER);
                 g2.setStroke(new BasicStroke(1f));
-                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 20, 20);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 20, 20);
             }
             g2.dispose();
             super.paintComponent(g);
@@ -391,8 +381,7 @@ private static final Color C_MUTED    = new Color(140, 140, 140);   // muted
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         }
 
-        @Override
-        protected void paintComponent(Graphics g) {
+        @Override protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(getModel().isRollover() ? C_ORANGE_H : C_ORANGE);

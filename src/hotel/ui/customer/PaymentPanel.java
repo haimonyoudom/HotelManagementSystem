@@ -4,207 +4,211 @@ import static hotel.ui.customer.CustomerDashboard.*;
 import java.awt.*;
 import javax.swing.*;
 
-// PaymentPanel: QR deposit payment screen.
-// - Left: QR code card with 20%/30% toggle, QR image, amount, mark as paid button
-// - Right: Payment summary — due amount, booking details table, payment status badges
-// - Uses shared theme tokens from CustomerDashboard for consistent look.
+public class PaymentPanel {
 
-public class PaymentPanel extends JPanel {
-
-    // ── Colors ─────────────────────────────────────────────────────────
-    // Light theme tokens for PaymentPanel
-    private static final Color C_BG         = new Color(250, 250, 250 );
-    private static final Color C_CARD_BG    = new Color(255, 255, 255 );
-    private static final Color C_CARD_BOR   = new Color(220, 220, 220 );
-    private static final Color C_ROW_BG     = new Color(245, 245, 245 );
-    private static final Color C_ROW_BOR    = new Color(230, 230, 230 );
-
-    private static final Color RED          = new Color(200, 50,  50 );
-    private static final Color RED_DIM      = new Color(255, 235, 235 );
-    private static final Color RED_BOR      = new Color(255, 200, 200 );
-    private static final Color RED_HOVER    = new Color(230, 80, 80 );
-
-    private static final Color GREEN        = new Color(34,  197, 94 );
-    private static final Color GREEN_DIM    = new Color(235, 255, 240 );
-    private static final Color GREEN_BOR    = new Color(200, 235, 200 );
-
-    private static final Color DEP_ACTIVE_BG  = new Color(245, 245, 245 );
-    private static final Color DEP_ACTIVE_BOR = new Color(200, 200, 200);
-    private static final Color DEP_IDLE_BG    = new Color(255, 255, 255 );
-    private static final Color DEP_IDLE_BOR   = new Color(230, 230, 230 );
-
-    private static final Color TXT_WHITE    = new Color(20, 20, 20);
-    private static final Color TXT_GRAY     = new Color(100, 100, 100);
-    private static final Color TXT_MUTED    = new Color(140, 140, 140 );
+    // ── Palette ────────────────────────────────────────────────────────
+    private static final Color C_PAGE_BG  = new Color(250, 250, 250);
+    private static final Color C_CARD_BG  = new Color(255, 255, 255);
+    private static final Color C_CARD_BOR = new Color(220, 220, 220);
+    private static final Color C_SUMM_BG  = new Color(240, 253, 244);
+    private static final Color C_GREEN    = new Color( 34, 197,  94);
+    private static final Color C_GREEN_DIM= new Color(220, 252, 231);
+    private static final Color C_SEL_BG   = new Color(0xEAF8EE);
+    private static final Color C_SEL_BOR  = new Color(0x22C55E);
+    private static final Color C_UNSEL_BG = new Color(0xFFFFFF);
+    private static final Color C_UNSEL_BOR= new Color(0xEEEEEE);
+    private static final Color TXT_MAIN   = new Color( 20,  20,  20);
+    private static final Color TXT_GRAY   = new Color(100, 100, 100);
+    private static final Color TXT_MUTED  = new Color(150, 150, 150);
 
     // ── Fonts ──────────────────────────────────────────────────────────
-    private static final Font F_SCAN_TITLE = new Font("Segoe UI", Font.PLAIN, 14);
-    private static final Font F_SCAN_SUB   = new Font("Segoe UI", Font.PLAIN, 11);
-    private static final Font F_DEP_BTN    = new Font("Segoe UI", Font.BOLD,  12);
-    private static final Font F_AMOUNT     = new Font("Segoe UI", Font.BOLD,  28);
-    private static final Font F_AMOUNT_SUB = new Font("Segoe UI", Font.PLAIN, 11);
-    private static final Font F_MARK       = new Font("Segoe UI", Font.BOLD,  14);
-    private static final Font F_SUM_TITLE  = new Font("Segoe UI", Font.PLAIN, 12);
-    private static final Font F_DUE_AMT    = new Font("Segoe UI", Font.BOLD,  28);
-    private static final Font F_DUE_SUB    = new Font("Segoe UI", Font.PLAIN, 11);
-    private static final Font F_ROW_KEY    = new Font("Segoe UI", Font.PLAIN, 11);
-    private static final Font F_ROW_VAL    = new Font("Segoe UI", Font.BOLD,  11);
-    private static final Font F_STATUS_LBL = new Font("Segoe UI", Font.PLAIN, 12);
-    private static final Font F_BADGE      = new Font("Segoe UI", Font.BOLD,  12);
+    private static final Font F_SECTION = new Font("Segoe UI", Font.PLAIN, 12);
+    private static final Font F_LABEL   = new Font("Segoe UI", Font.PLAIN, 13);
+    private static final Font F_BOLD    = new Font("Segoe UI", Font.BOLD,  13);
+    private static final Font F_AMOUNT  = new Font("Segoe UI", Font.BOLD,  28);
+    private static final Font F_SMALL   = new Font("Segoe UI", Font.PLAIN, 11);
+    private static final Font F_CONFIRM = new Font("Segoe UI", Font.BOLD,  14);
+    private static final Font F_SUMM    = new Font("Segoe UI", Font.PLAIN, 12);
+    private static final Font F_POLICY  = new Font("Segoe UI", Font.PLAIN, 12);
+    private static final Font F_DEP_PCT = new Font("Segoe UI", Font.BOLD,  22);
+    private static final Font F_DEP_LBL = new Font("Segoe UI", Font.PLAIN, 11);
+
+    // ── QR image path — change this to point to your QR image ─────────
+    // Place your QR PNG at this resource path (e.g. src/hotel/images/resources/qr.png)
+    // or use an absolute path like "C:/path/to/qr.png"
+    public static final String QR_IMAGE_PATH = "/hotel/images/resources/qr.png";
 
     // ── State ──────────────────────────────────────────────────────────
-    private static int    depositPct   = 20;
-    private static int    roomTotal    = 0;
-    private static String bookingRef   = "#BK-2026-0001";
-    private static String bookingRoom  = "Room not selected";
-    private static String bookingCheckin  = "—";
-    private static String bookingCheckout = "—";
+    private static int    depositPct     = 20;
+    private static int    roomTotal      = 0;
+    private static String bookingRef     = "#BK-2026-0001";
+    private static String bookingRoom    = "Room not selected";
+    private static String bookingCheckin = "—";
+    private static String bookingCheckout= "—";
 
-    private static JLabel scanSubLbl;
-    private static JLabel amountLbl;
-    private static JLabel amountSubLbl;
-    private static JLabel dueAmtLbl;
-    private static JLabel dueLbl;
-    private static JLabel remainLbl;
-    private static JLabel detailRefValue;
-    private static JLabel detailRoomValue;
-    private static JLabel detailCheckinValue;
-    private static JLabel detailCheckoutValue;
-    private static JLabel detailRoomTotalValue;
-    private static JButton btn20;
-    private static JButton btn30;
+    private static JLabel   scanSubLbl;
+    private static JLabel   amountLbl;
+    private static JLabel   amountSubLbl;
+    private static JLabel[] summaryValues = new JLabel[4];
+    private static JButton  btn20;
+    private static JButton  btn30;
+    private static JLabel   qrImageLabel; // holds the QR image
 
-    // =========================================================================
-    public PaymentPanel() {
-        setLayout(null);
-        setBounds(0, 0, W, H);
-        setBackground(C_BG);
-        setOpaque(true);
-    }
-
-    // =========================================================================
-    // Called from CustomerDashboard — same pattern as leader
     // =========================================================================
     public static void build(JPanel panel) {
-        addTopbar(panel, "Payment", "Deposit payment screen");
-        addSidebar(panel, "payment");
+        panel.setBackground(C_PAGE_BG);
+        panel.add(buildTopbar("PAYMENT"), BorderLayout.NORTH);
 
-        // ── OUTER CONTENT AREA ────────────────────────────────────────
-        int pad = 14;
-        int cx  = CONTENT_X + pad;
-        int cy  = CONTENT_Y + pad;
-        int cw  = CONTENT_W - pad * 2;
-        int ch  = CONTENT_H - pad * 2;
+        JPanel contentWrapper = new JPanel(new BorderLayout());
+        contentWrapper.setBackground(C_PAGE_BG);
+        contentWrapper.setBorder(BorderFactory.createEmptyBorder(16, 24, 24, 24));
+        panel.add(contentWrapper, BorderLayout.CENTER);
 
-        // ── LEFT QR CARD ──────────────────────────────────────────────
-        int leftW  = (int)(cw * 0.55);
-        int rightW = cw - leftW - 16;
-        int rightX = cx + leftW + 16;
+        JPanel splitPane = new JPanel(new GridBagLayout());
+        splitPane.setBackground(C_PAGE_BG);
+        contentWrapper.add(splitPane, BorderLayout.CENTER);
 
-        JPanel qrCard = makeCard(C_CARD_BG, C_CARD_BOR);
-        qrCard.setBounds(cx, cy, leftW, ch);
-        panel.add(qrCard);
-        buildQRCard(qrCard, leftW, ch);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill    = GridBagConstraints.BOTH;
+        gbc.weighty = 1.0;
+        gbc.gridy   = 0;
 
-        // ── RIGHT SUMMARY PANEL ───────────────────────────────────────
-        JPanel summaryCol = new JPanel(null);
-        summaryCol.setOpaque(false);
-        summaryCol.setBounds(rightX, cy, rightW, ch);
-        panel.add(summaryCol);
-        buildSummaryPanel(summaryCol, rightW, ch);
+        JPanel formCard = makeCard(C_CARD_BG, C_CARD_BOR);
+        formCard.setLayout(new BorderLayout());
+        gbc.gridx   = 0;
+        gbc.weightx = 0.62;
+        gbc.insets  = new Insets(0, 0, 0, 12);
+        splitPane.add(formCard, gbc);
+
+        JPanel notesCard = makeCard(C_CARD_BG, C_CARD_BOR);
+        notesCard.setLayout(new BorderLayout());
+        gbc.gridx   = 1;
+        gbc.weightx = 0.38;
+        gbc.insets  = new Insets(0, 0, 0, 0);
+        splitPane.add(notesCard, gbc);
+
+        buildFormCard(formCard);
+        buildNotesCard(notesCard);
     }
 
     // =========================================================================
-    // LEFT — QR CARD
+    // LEFT — FORM CARD
     // =========================================================================
-    static void buildQRCard(JPanel card, int w, int h) {
-        int px = 0, innerW = w;
+    private static void buildFormCard(JPanel card) {
+        JPanel inner = new JPanel();
+        inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
+        inner.setBackground(C_CARD_BG);
+        inner.setBorder(BorderFactory.createEmptyBorder(16, 18, 16, 18));
 
-        // ── Title ─────────────────────────────────────────────────────
-        JLabel scanTitle = lbl("Scan to Pay Deposit", F_SCAN_TITLE, TXT_WHITE);
-        scanTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        scanTitle.setBounds(0, 20, innerW, 20);
-        card.add(scanTitle);
+        // Anchor to NORTH so scroll pane scrolls rather than stretches content
+        JPanel innerWrapper = new JPanel(new BorderLayout());
+        innerWrapper.setBackground(C_CARD_BG);
+        innerWrapper.add(inner, BorderLayout.NORTH);
 
-        scanSubLbl = lbl("Booking " + bookingRef + " · " + bookingRoom, F_SCAN_SUB, TXT_GRAY);
-        scanSubLbl.setHorizontalAlignment(SwingConstants.CENTER);
-        scanSubLbl.setBounds(0, 42, innerW, 16);
-        card.add(scanSubLbl);
+        JScrollPane scroll = new JScrollPane(innerWrapper);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        card.add(scroll, BorderLayout.CENTER);
 
-        // ── Deposit Toggle Buttons ────────────────────────────────────
-        int btnW  = (int)(innerW * 0.38);
-        int btnH  = 36;
-        int btnY  = 70;
-        int gap   = 10;
-        int totalBtnW = btnW * 2 + gap;
-        int startX = (innerW - totalBtnW) / 2;
+        // ── Section title + sub label ─────────────────────────────────
+        JLabel secTitle = lbl("Scan to Pay Deposit", F_SECTION, TXT_GRAY);
+        secTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        inner.add(secTitle);
+        inner.add(Box.createVerticalStrut(4));
 
-        btn20 = makeDepBtn("20% Deposit", true);
-        btn20.setBounds(startX, btnY, btnW, btnH);
-        card.add(btn20);
+        scanSubLbl = lbl("Booking " + bookingRef + " · " + bookingRoom, F_SMALL, TXT_MUTED);
+        scanSubLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        inner.add(scanSubLbl);
+        inner.add(Box.createVerticalStrut(14));
 
-        btn30 = makeDepBtn("30% Deposit", false);
-        btn30.setBounds(startX + btnW + gap, btnY, btnW, btnH);
-        card.add(btn30);
+        // ── Deposit toggle buttons (same style as BookingPanel room btns) ──
+        JLabel depLabel = lbl("Select Deposit", F_LABEL, TXT_MAIN);
+        depLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        inner.add(depLabel);
+        inner.add(Box.createVerticalStrut(8));
 
+        JPanel depRow = new JPanel(new GridLayout(1, 2, 10, 0));
+        depRow.setBackground(C_CARD_BG);
+        btn20 = makeToggleBtn("20%", "20% Deposit", true);
+        btn30 = makeToggleBtn("30%", "30% Deposit", false);
         btn20.addActionListener(e -> setDeposit(20));
         btn30.addActionListener(e -> setDeposit(30));
+        depRow.add(btn20);
+        depRow.add(btn30);
+        inner.add(sizeBox(depRow, 60));
+        inner.add(Box.createVerticalStrut(16));
 
-        // ── QR Code Image ─────────────────────────────────────────────
-        int qrSize = (int)(Math.min(w, h) * 0.42);
-        int qrX    = (innerW - qrSize) / 2;
-        int qrY    = btnY + btnH + 18;
+        // ── QR image — centred via a FlowLayout wrapper ───────────────
+        // To swap the QR: change QR_IMAGE_PATH at the top of this class,
+        // or call PaymentPanel.setQRImage(myIcon) at runtime.
+        qrImageLabel = new JLabel();
+        qrImageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        qrImageLabel.setVerticalAlignment(SwingConstants.CENTER);
+        qrImageLabel.setOpaque(true);
+        qrImageLabel.setBackground(new Color(248, 252, 248));
+        qrImageLabel.setBorder(BorderFactory.createLineBorder(new Color(200, 235, 210), 1));
 
-        JPanel qrBox = new JPanel() {
+        // Try to load the image; show a placeholder text if not found
+        loadQRImage(200, 200);
+
+        // FlowLayout centres the label horizontally; sizeBox fixes the height
+        JPanel qrFlow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        qrFlow.setBackground(C_CARD_BG);
+        qrImageLabel.setPreferredSize(new Dimension(200, 200));
+        qrFlow.add(qrImageLabel);
+        inner.add(sizeBox(qrFlow, 210));
+        inner.add(Box.createVerticalStrut(14));
+
+        // ── Amount (centred to match QR) ──────────────────────────────
+        amountLbl = lbl("$0.00", F_AMOUNT, C_GREEN);
+
+        JPanel amountFlow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        amountFlow.setBackground(C_CARD_BG);
+        amountFlow.add(amountLbl);
+        inner.add(sizeBox(amountFlow, 40));
+        inner.add(Box.createVerticalStrut(2));
+
+        amountSubLbl = lbl((100 - depositPct) + "% of $" + roomTotal + " total", F_SMALL, TXT_MUTED);
+
+        JPanel amountSubFlow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        amountSubFlow.setBackground(C_CARD_BG);
+        amountSubFlow.add(amountSubLbl);
+        inner.add(sizeBox(amountSubFlow, 18));
+        inner.add(Box.createVerticalStrut(14));
+
+        // ── Summary box ───────────────────────────────────────────────
+        JPanel summBox = new JPanel(new GridLayout(4, 2, 0, 4)) {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Outer rounded border
-                g2.setColor(C_CARD_BG);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                g2.setColor(C_CARD_BOR);
-                g2.setStroke(new BasicStroke(1f));
-                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 10, 10);
-                // Checkerboard QR pattern
-                int cells  = 14;
-                int cellSz = (getWidth() - 16) / cells;
-                int offX   = 8, offY = 8;
-                boolean[][] qr = generateQRPattern(cells);
-                for (int r = 0; r < cells; r++) {
-                    for (int c = 0; c < cells; c++) {
-                        g2.setColor(qr[r][c] ? new Color(80,80,80) : new Color(160,160,160));
-                        g2.fillRect(offX + c * cellSz, offY + r * cellSz, cellSz, cellSz);
-                    }
-                }
+                g2.setColor(C_SUMM_BG);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 g2.dispose();
             }
         };
-        qrBox.setBounds(qrX, qrY, qrSize, qrSize);
-        qrBox.setOpaque(false);
-        card.add(qrBox);
+        summBox.setOpaque(false);
+        summBox.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
 
-        // ── Amount ────────────────────────────────────────────────────
-        int amtY = qrY + qrSize + 16;
-        amountLbl = lbl("$347.00", F_AMOUNT, RED);
-        amountLbl.setHorizontalAlignment(SwingConstants.CENTER);
-        amountLbl.setBounds(0, amtY, innerW, 36);
-        card.add(amountLbl);
+        String[] summLabels   = {"Room", "Deposit", "Room Total", "Due Now"};
+        String[] summDefaults = {bookingRoom, depositPct + "%", "$" + roomTotal, "$0"};
+        for (int i = 0; i < 4; i++) {
+            summBox.add(lbl(summLabels[i], F_SUMM, TXT_GRAY));
+            summaryValues[i] = lbl(summDefaults[i], F_SUMM, BLUE);
+            summaryValues[i].setHorizontalAlignment(SwingConstants.RIGHT);
+            summBox.add(summaryValues[i]);
+        }
+        inner.add(sizeBox(summBox, 92));
+        inner.add(Box.createVerticalStrut(14));
 
-        amountSubLbl = lbl((100 - depositPct) + "% of $" + roomTotal + " total", F_AMOUNT_SUB, TXT_GRAY);
-        amountSubLbl.setHorizontalAlignment(SwingConstants.CENTER);
-        amountSubLbl.setBounds(0, amtY + 38, innerW, 16);
-        card.add(amountSubLbl);
-
-        // ── Mark as Paid Button ───────────────────────────────────────
-        int markY = amtY + 64;
-        int markW = (int)(innerW * 0.72);
-        int markX = (innerW - markW) / 2;
-
+        // ── Mark as Paid button ───────────────────────────────────────
         JButton markBtn = new JButton("Mark as Paid") {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getModel().isRollover() ? C_ROW_BG : C_CARD_BG);
+                g2.setColor(getModel().isRollover() ? C_GREEN_DIM : C_CARD_BG);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 g2.setColor(C_CARD_BOR);
                 g2.setStroke(new BasicStroke(1f));
@@ -213,165 +217,174 @@ public class PaymentPanel extends JPanel {
                 super.paintComponent(g);
             }
         };
-        markBtn.setBounds(markX, markY, markW, 42);
-        markBtn.setFont(F_MARK);
-        markBtn.setForeground(TXT_WHITE);
+        markBtn.setFont(F_CONFIRM);
+        markBtn.setForeground(C_GREEN);
         markBtn.setContentAreaFilled(false);
         markBtn.setBorderPainted(false);
         markBtn.setFocusPainted(false);
         markBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         markBtn.addActionListener(e -> CustomerDashboard.switchTo("history"));
-        card.add(markBtn);
+        inner.add(sizeBox(markBtn, 40));
+        inner.add(Box.createVerticalStrut(8));
     }
 
     // =========================================================================
-    // RIGHT — SUMMARY PANEL
+    // RIGHT — NOTES CARD
     // =========================================================================
-    static void buildSummaryPanel(JPanel col, int w, int h) {
-        int py = 0;
+    private static void buildNotesCard(JPanel card) {
+        JPanel inner = new JPanel();
+        inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
+        inner.setBackground(C_CARD_BG);
+        inner.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
+        card.add(inner, BorderLayout.CENTER);
 
-        // ── Section label ─────────────────────────────────────────────
-        JLabel sumTitle = lbl("Payment Summary", F_SUM_TITLE, TXT_GRAY);
-        sumTitle.setBounds(0, py, w, 16);
-        col.add(sumTitle);
-        py += 26;
+        JLabel title = lbl("Payment Notes", F_LABEL, TXT_MAIN);
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+        inner.add(title);
+        inner.add(Box.createVerticalStrut(16));
 
-        // ── Due Amount Card ───────────────────────────────────────────
-        int dueCardH = 74;
-        JPanel dueCard = new JPanel(null) {
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(C_CARD_BG);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                // Red left border
-                g2.setColor(RED);
-                g2.fillRoundRect(0, 0, 4, getHeight(), 4, 4);
-                g2.dispose();
-            }
-        };
-        dueCard.setBounds(0, py, w, dueCardH);
-        dueCard.setOpaque(false);
-        col.add(dueCard);
+        JLabel polHeader = lbl("Policies", F_BOLD, TXT_MAIN);
+        polHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+        inner.add(polHeader);
+        inner.add(Box.createVerticalStrut(10));
 
-        dueAmtLbl = lbl("$347", F_DUE_AMT, RED);
-        dueAmtLbl.setBounds(16, 10, w - 24, 36);
-        dueCard.add(dueAmtLbl);
+        for (String pol : new String[]{
+                "Check-in from 2:00 PM",
+                "Check-out by 12:00 PM",
+                "20% or 30% deposit on confirmation",
+                "Remaining balance due at check-in",
+                "Deposit non-refundable within 24h",
+                "QR payment processed instantly"}) {
+            JLabel pl = lbl("• " + pol, F_POLICY, TXT_GRAY);
+            pl.setAlignmentX(Component.LEFT_ALIGNMENT);
+            inner.add(pl);
+            inner.add(Box.createVerticalStrut(5));
+        }
+        inner.add(Box.createVerticalStrut(20));
 
-        dueLbl = lbl("Due Now (20% Deposit)", F_DUE_SUB, TXT_GRAY);
-        dueLbl.setBounds(16, 46, w - 24, 16);
-        dueCard.add(dueLbl);
+        JLabel depLabel = lbl("Deposit options", F_BOLD, C_GREEN);
+        depLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        inner.add(depLabel);
+        inner.add(Box.createVerticalStrut(12));
 
-        py += dueCardH + 12;
-
-        // ── Booking Details Card ──────────────────────────────────────
-        int detailCardH = 5 * 38 + 16;
-        JPanel detailCard = makeCard(C_CARD_BG, C_CARD_BOR);
-        detailCard.setBounds(0, py, w, detailCardH);
-        col.add(detailCard);
-
-        detailRefValue = addDetailRow(detailCard, "Booking ref", bookingRef, w, 10);
-        detailRoomValue = addDetailRow(detailCard, "Room", bookingRoom, w, 48);
-        detailCheckinValue = addDetailRow(detailCard, "Check-in", bookingCheckin, w, 86);
-        detailCheckoutValue = addDetailRow(detailCard, "Check-out", bookingCheckout, w, 124);
-        detailRoomTotalValue = addDetailRow(detailCard, "Room Total", "$0", w, 162);
-
-        py += detailCardH + 8;
-
-        // Remaining row (standalone inside same card area)
-        remainLbl = lbl("Remaining$1,387 due at check-in", F_ROW_KEY, TXT_GRAY);
-        remainLbl.setBounds(0, py, w, 16);
-        col.add(remainLbl);
-        py += 28;
-
-        // ── Payment Status ────────────────────────────────────────────
-        JLabel statusTitle = lbl("Payment Status", F_STATUS_LBL, TXT_WHITE);
-        statusTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        statusTitle.setBounds(0, py, w, 18);
-        col.add(statusTitle);
-        py += 26;
-
-        int badgeW = (w - 10) / 2;
-        int badgeH = 52;
-
-        // Deposit Pending — light red
-        JPanel depBadge = makeBadge("Deposit\nPending",
-            RED_DIM, RED_BOR);
-        depBadge.setBounds(0, py, badgeW, badgeH);
-        col.add(depBadge);
-
-        // Balance Pending — light green
-        JPanel balBadge = makeBadge("Balance\nPending",
-            GREEN_DIM, GREEN_BOR);
-        balBadge.setBounds(badgeW + 10, py, badgeW, badgeH);
-        col.add(balBadge);
+        JPanel depRow = new JPanel(new GridLayout(1, 2, 12, 0));
+        depRow.setBackground(C_CARD_BG);
+        depRow.add(buildDepositBox("20%", "Basic deposit"));
+        depRow.add(buildDepositBox("30%", "Full deposit"));
+        inner.add(sizeBox(depRow, 90));
+        inner.add(Box.createVerticalGlue());
     }
 
     // =========================================================================
     // HELPERS
     // =========================================================================
 
-    static void setDeposit(int pct) {
-        depositPct = pct;
-        int payPct = 100 - pct; // user pays the remainder after discount
-        int amt    = (int) Math.round(roomTotal * payPct / 100.0);
-        int remain = roomTotal - amt;
-        int remainPct = pct; // remaining (discount) percent due later
-
-        // Update toggle button states
-        updateDepBtn(btn20, pct == 20);
-        updateDepBtn(btn30, pct == 30);
-
-        // Update labels
-        if (amountLbl    != null) amountLbl.setText("$" + String.format("%.2f", (double)amt));
-        if (amountSubLbl != null) amountSubLbl.setText(payPct + "% of $" + roomTotal + " total");
-        if (dueAmtLbl    != null) dueAmtLbl.setText("$" + amt);
-        if (dueLbl       != null) dueLbl.setText("Due Now (" + payPct + "% Payment)");
-        if (remainLbl    != null) remainLbl.setText("Remaining " + remainPct + "% ($" + remain + ") due at check-in");
+    /**
+     * Loads QR image from QR_IMAGE_PATH into qrImageLabel, scaled to size×size.
+     * If the image is not found a placeholder text is shown instead.
+     * You can also call setQRImage(ImageIcon) at runtime to swap the image.
+     */
+    private static void loadQRImage(int w, int h) {
+        try {
+            java.net.URL url = PaymentPanel.class.getResource(QR_IMAGE_PATH);
+            if (url != null) {
+                Image img = new ImageIcon(url).getImage()
+                    .getScaledInstance(w, h, Image.SCALE_SMOOTH);
+                qrImageLabel.setIcon(new ImageIcon(img));
+                qrImageLabel.setText("");
+                return;
+            }
+            // Try as a plain file path
+            java.io.File f = new java.io.File(QR_IMAGE_PATH);
+            if (f.exists()) {
+                Image img = new ImageIcon(f.getAbsolutePath()).getImage()
+                    .getScaledInstance(w, h, Image.SCALE_SMOOTH);
+                qrImageLabel.setIcon(new ImageIcon(img));
+                qrImageLabel.setText("");
+                return;
+            }
+        } catch (Exception ignored) {}
+        // Placeholder when no image found
+        qrImageLabel.setIcon(null);
+        qrImageLabel.setText("<html><center><font color='#22C55E'>QR Image<br>not found</font></center></html>");
+        qrImageLabel.setFont(F_SMALL);
     }
 
-    public static void setBookingDetails(String ref, String room, String checkin, String checkout, int total) {
-        bookingRef = ref;
-        bookingRoom = room;
-        bookingCheckin = checkin != null && !checkin.isEmpty() ? checkin : "—";
-        bookingCheckout = checkout != null && !checkout.isEmpty() ? checkout : "—";
-        roomTotal = total;
-        depositPct = 20;
-
-        if (scanSubLbl != null) {
-            scanSubLbl.setText("Booking " + bookingRef + " · " + bookingRoom);
+    /**
+     * Call this at runtime to swap the QR code image.
+     * Example:  PaymentPanel.setQRImage(new ImageIcon("path/to/qr.png"));
+     */
+    public static void setQRImage(ImageIcon icon) {
+        if (qrImageLabel != null) {
+            if (icon != null) {
+                Image scaled = icon.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+                qrImageLabel.setIcon(new ImageIcon(scaled));
+                qrImageLabel.setText("");
+            } else {
+                qrImageLabel.setIcon(null);
+                qrImageLabel.setText("No QR image");
+            }
         }
-        if (detailRefValue != null) detailRefValue.setText(bookingRef);
-        if (detailRoomValue != null) detailRoomValue.setText(bookingRoom);
-        if (detailCheckinValue != null) detailCheckinValue.setText(bookingCheckin);
-        if (detailCheckoutValue != null) detailCheckoutValue.setText(bookingCheckout);
-        if (detailRoomTotalValue != null) detailRoomTotalValue.setText("$" + roomTotal);
-        setDeposit(depositPct);
     }
 
-    static void updateDepBtn(JButton btn, boolean active) {
-        btn.putClientProperty("active", active);
-        btn.repaint();
+    /** Fixed-height, full-width wrapper — the key BoxLayout sizing fix. */
+    private static JPanel sizeBox(Component c, int height) {
+        JPanel p = new JPanel(new BorderLayout());
+        p.setOpaque(false);
+        p.setAlignmentX(Component.LEFT_ALIGNMENT);
+        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
+        p.setPreferredSize(new Dimension(100, height));
+        p.setMinimumSize(new Dimension(0, height));
+        p.add(c, BorderLayout.CENTER);
+        return p;
     }
 
-    static JButton makeDepBtn(String text, boolean active) {
-        JButton btn = new JButton(text) {
+    private static JPanel buildDepositBox(String pct, String labelText) {
+        JPanel box = new JPanel() {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(C_GREEN_DIM);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                g2.dispose();
+            }
+        };
+        box.setOpaque(false);
+        box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
+        box.setBorder(BorderFactory.createEmptyBorder(10, 8, 10, 8));
+
+        JLabel pctLbl = lbl(pct, F_DEP_PCT, C_GREEN);
+        pctLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        box.add(pctLbl);
+        box.add(Box.createVerticalStrut(4));
+
+        JLabel descLbl = lbl(labelText, F_DEP_LBL, C_GREEN);
+        descLbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+        box.add(descLbl);
+        return box;
+    }
+
+    private static JButton makeToggleBtn(String heading, String subText, boolean active) {
+        JButton btn = new JButton() {
             @Override protected void paintComponent(Graphics g) {
                 boolean act = Boolean.TRUE.equals(getClientProperty("active"));
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(act ? DEP_ACTIVE_BG : DEP_IDLE_BG);
+                g2.setColor(act ? C_SEL_BG  : C_UNSEL_BG);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                g2.setColor(act ? DEP_ACTIVE_BOR : DEP_IDLE_BOR);
-                g2.setStroke(new BasicStroke(1.2f));
-                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 8, 8);
+                g2.setColor(act ? C_SEL_BOR : C_UNSEL_BOR);
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.drawRoundRect(1, 1, getWidth()-2, getHeight()-2, 8, 8);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                g2.setColor(TXT_MAIN);
+                g2.drawString(heading, 12, 26);
+                g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                g2.setColor(TXT_GRAY);
+                g2.drawString(subText, 12, 44);
                 g2.dispose();
-                super.paintComponent(g);
             }
         };
         btn.putClientProperty("active", active);
-        btn.setFont(F_DEP_BTN);
-        btn.setForeground(TXT_WHITE);
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
@@ -379,64 +392,39 @@ public class PaymentPanel extends JPanel {
         return btn;
     }
 
-    static JLabel addDetailRow(JPanel parent, String key, String val, int w, int y) {
-        // Separator line
-        JPanel sep = new JPanel() {
-            @Override protected void paintComponent(Graphics g) {
-                g.setColor(C_ROW_BOR);
-                g.drawLine(0, 0, getWidth(), 0);
-            }
-        };
-        sep.setBounds(12, y, w - 24, 1);
-        sep.setOpaque(false);
-        parent.add(sep);
+    // ── Live update ────────────────────────────────────────────────────
+    static void setDeposit(int pct) {
+        depositPct = pct;
+        int payPct = 100 - pct;
+        int amt    = (int) Math.round(roomTotal * payPct / 100.0);
 
-        JLabel k = lbl(key, F_ROW_KEY, TXT_GRAY);
-        k.setBounds(14, y + 4, (w / 2) - 10, 18);
-        parent.add(k);
+        if (btn20 != null) { btn20.putClientProperty("active", pct == 20); btn20.repaint(); }
+        if (btn30 != null) { btn30.putClientProperty("active", pct == 30); btn30.repaint(); }
 
-        // Highlight certain values
-        Color valColor = TXT_WHITE;
-        if (val.contains("Jun") || val.startsWith("$")) valColor = new Color(200, 50, 50);
+        if (amountLbl    != null) amountLbl.setText("$" + String.format("%.2f", (double) amt));
+        if (amountSubLbl != null) amountSubLbl.setText(payPct + "% of $" + roomTotal + " total");
 
-        JLabel v = lbl(val, F_ROW_VAL, valColor);
-        v.setHorizontalAlignment(SwingConstants.RIGHT);
-        v.setBounds(w / 2, y + 4, (w / 2) - 14, 18);
-        parent.add(v);
-        return v;
+        if (summaryValues[0] != null) summaryValues[0].setText(bookingRoom);
+        if (summaryValues[1] != null) summaryValues[1].setText(pct + "%");
+        if (summaryValues[2] != null) summaryValues[2].setText("$" + roomTotal);
+        if (summaryValues[3] != null) summaryValues[3].setText("$" + amt);
     }
 
-    static JPanel makeBadge(String text, Color bg, Color border) {
-        String[] lines = text.split("\n");
-        JPanel badge = new JPanel(null) {
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(bg);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                g2.setColor(border);
-                g2.setStroke(new BasicStroke(1f));
-                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 8, 8);
-                g2.dispose();
-            }
-        };
-        badge.setOpaque(false);
+    public static void setBookingDetails(String ref, String room,
+                                          String checkin, String checkout, int total) {
+        bookingRef      = ref;
+        bookingRoom     = room;
+        bookingCheckin  = (checkin  != null && !checkin.isEmpty())  ? checkin  : "—";
+        bookingCheckout = (checkout != null && !checkout.isEmpty()) ? checkout : "—";
+        roomTotal       = total;
+        depositPct      = 20;
 
-        for (int i = 0; i < lines.length; i++) {
-            JLabel l = lbl(lines[i], F_BADGE, TXT_WHITE);
-            l.setHorizontalAlignment(SwingConstants.CENTER);
-            l.setBounds(0, 10 + i * 18, badge.getPreferredSize().width, 18);
-            badge.add(l);
-        }
-        // Fix label bounds after badge size known — use full width
-        for (Component c : badge.getComponents()) {
-            c.setBounds(0, ((JLabel)c).getBounds().y, 200, 18);
-        }
-        return badge;
+        if (scanSubLbl != null) scanSubLbl.setText("Booking " + ref + " · " + room);
+        setDeposit(20);
     }
 
-    static JPanel makeCard(Color bg, Color border) {
-        return new JPanel(null) {
+    private static JPanel makeCard(Color bg, Color border) {
+        return new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -450,32 +438,10 @@ public class PaymentPanel extends JPanel {
         };
     }
 
-    static JLabel lbl(String text, Font font, Color color) {
+    private static JLabel lbl(String text, Font font, Color color) {
         JLabel l = new JLabel(text);
         l.setFont(font);
         l.setForeground(color);
         return l;
-    }
-
-    // ── Simple QR checkerboard pattern ────────────────────────────────
-    static boolean[][] generateQRPattern(int size) {
-        boolean[][] p = new boolean[size][size];
-        // Corner finder patterns
-        for (int i = 0; i < 7; i++) {
-            for (int j = 0; j < 7; j++) {
-                boolean border = (i==0||i==6||j==0||j==6);
-                boolean inner  = (i>=2&&i<=4&&j>=2&&j<=4);
-                p[i][j]             = border || inner;
-                p[i][size-7+j]      = border || inner;
-                p[size-7+i][j]      = border || inner;
-            }
-        }
-        // Data modules (pseudo-random)
-        for (int i = 8; i < size - 8; i++) {
-            for (int j = 8; j < size; j++) {
-                p[i][j] = ((i * 3 + j * 7) % 5 < 2);
-            }
-        }
-        return p;
     }
 }
