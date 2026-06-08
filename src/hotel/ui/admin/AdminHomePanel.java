@@ -70,14 +70,23 @@ public class AdminHomePanel extends JPanel {
             staffValue.setText(String.valueOf(staff.size()));
             revenueValue.setText(String.format("$%.2f", revenue));
 
+            // Calculate percentages for pie chart (using counts, not revenue dollars)
+            int roomsCount = (int) availableRooms;
+            int bookingsCount = bookings.size();
+            int staffCount = staff.size();
+            int customersCount = customers.size();
+            int paymentsCount = paymentDAO.getAll().size();
+            
+            int total = roomsCount + bookingsCount + staffCount + customersCount + paymentsCount;
+            
             int[] chartData = {
-                    (int) availableRooms,
-                    bookings.size(),
-                    staff.size(),
-                    customers.size(),
-                    (int) Math.round(revenue / 100)
+                    total > 0 ? (int) Math.round((roomsCount * 100.0) / total) : 0,
+                    total > 0 ? (int) Math.round((bookingsCount * 100.0) / total) : 0,
+                    total > 0 ? (int) Math.round((staffCount * 100.0) / total) : 0,
+                    total > 0 ? (int) Math.round((customersCount * 100.0) / total) : 0,
+                    total > 0 ? (int) Math.round((paymentsCount * 100.0) / total) : 0
             };
-            chartPlaceholder.updateData(chartData);
+            chartPlaceholder.updateData(chartData, true);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to load dashboard: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -121,6 +130,7 @@ public class AdminHomePanel extends JPanel {
                 new Color(205, 100, 154)
         };
         private int[] data = {1, 1, 1, 1, 1};
+        private boolean isPercentage = false;
 
         ChartPlaceholder() {
             setOpaque(false);
@@ -128,6 +138,13 @@ public class AdminHomePanel extends JPanel {
 
         public void updateData(int[] newData) {
             this.data = newData.clone();
+            this.isPercentage = false;
+            repaint();
+        }
+
+        public void updateData(int[] newData, boolean isPercentage) {
+            this.data = newData.clone();
+            this.isPercentage = isPercentage;
             repaint();
         }
 
@@ -155,7 +172,7 @@ public class AdminHomePanel extends JPanel {
             int legendX = x + size + 90;
             int legendY = y + 30;
 
-            String[] labels = {"Rooms", "Bookings", "Staff", "Customers", "Revenue"};
+            String[] labels = {"Rooms", "Bookings", "Staff", "Customers", "Payments"};
 
             for (int i = 0; i < labels.length; i++) {
                 g.setColor(colors[i]);
@@ -163,7 +180,8 @@ public class AdminHomePanel extends JPanel {
 
                 g.setColor(UITheme.TEXT);
                 g.setFont(UITheme.UI_FONT);
-                g.drawString(labels[i] + " (" + data[i] + ")", legendX + 28, legendY + 13 + i * 34);
+                String dataLabel = isPercentage ? data[i] + "%" : String.valueOf(data[i]);
+                g.drawString(labels[i] + " (" + dataLabel + ")", legendX + 28, legendY + 13 + i * 34);
             }
 
             g.dispose();

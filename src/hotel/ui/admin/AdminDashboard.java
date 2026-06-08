@@ -38,7 +38,6 @@ public class AdminDashboard extends JFrame {
         ManageCustomersPanel customersPanel = new ManageCustomersPanel();
         ManageStaffPanel     staffPanel     = new ManageStaffPanel();
         ManageBookingsPanel  bookingsPanel  = new ManageBookingsPanel();
-        ManagePaymentsPanel  paymentsPanel  = new ManagePaymentsPanel();
         IncomeReportPanel    reportPanel    = new IncomeReportPanel();
 
         contentPanel.setBackground(UITheme.BG);
@@ -47,7 +46,6 @@ public class AdminDashboard extends JFrame {
         contentPanel.add(wrapPage("Customers",     customersPanel), "CUSTOMERS");
         contentPanel.add(wrapPage("Staff",         staffPanel),     "STAFF");
         contentPanel.add(wrapPage("Bookings",      bookingsPanel),  "BOOKINGS");
-        contentPanel.add(wrapPage("Payments",      paymentsPanel),  "PAYMENTS");
         contentPanel.add(wrapPage("Income Report", reportPanel),    "REPORTS");
 
         sidebar.addSection("Summary");
@@ -58,11 +56,9 @@ public class AdminDashboard extends JFrame {
 
         sidebar.addSection("Bookings");
         sidebar.addNavItem("BOOKINGS",  AdminSidebarPanel.IconType.BOOKINGS,      "Bookings",      () -> { bookingsPanel.reload();  showPage("BOOKINGS");  });
-        sidebar.addNavItem("PAYMENTS",  AdminSidebarPanel.IconType.PAYMENTS,      "Payments",      () -> { paymentsPanel.reload();  showPage("PAYMENTS");  });
 
         sidebar.addSection("Cashflow");
         sidebar.addNavItem("REPORTS",   AdminSidebarPanel.IconType.INCOME,        "Income Report", () -> showPage("REPORTS"));
-        sidebar.addNavItem("TRANS",     AdminSidebarPanel.IconType.TRANSACTIONS,  "Transactions",  () -> showPage("REPORTS"));
 
         sidebar.addGlue();
         sidebar.addNavItem("LOGOUT",    AdminSidebarPanel.IconType.LOGOUT,        "Logout",        this::logout);
