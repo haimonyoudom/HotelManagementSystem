@@ -18,11 +18,17 @@ public class RoomStatusPanel extends JPanel {
     private List<Room> allRooms = new ArrayList<>();
     private JPanel roomGrid;
     private JLabel availableCount, bookedCount, cleaningCount, maintenanceCount;
+    private Runnable onRoomChanged;
 
     // Filter buttons
     private JButton activeFilter;
 
     public RoomStatusPanel() {
+        this(null);
+    }
+
+    public RoomStatusPanel(Runnable onRoomChanged) {
+        this.onRoomChanged = onRoomChanged;
         this.roomDAO = new RoomDAO();
         setLayout(new BorderLayout());
         setBackground(UIConstants.THEME_WHITE_BG);
@@ -99,9 +105,8 @@ public class RoomStatusPanel extends JPanel {
 
         JScrollPane scroll = new JScrollPane(roomGrid);
         scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
-        scroll.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 0));
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.getViewport().setBackground(UIConstants.THEME_WHITE_BG);
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
         // Dynamically adjust columns based on available width
         scroll.addComponentListener(new java.awt.event.ComponentAdapter() {
@@ -364,10 +369,11 @@ public class RoomStatusPanel extends JPanel {
         saveBtn.addActionListener(e -> {
             String newStatus = (String) statusBox.getSelectedItem();
             try {
-                boolean avail = "available".equalsIgnoreCase(newStatus);
-                room.setAvailable(avail);
+                room.setStatus(newStatus);
                 roomDAO.update(room);
                 loadRooms(null);
+                if (onRoomChanged != null)
+                    onRoomChanged.run();
                 dialog.dispose();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(dialog, "Failed to update: " + ex.getMessage());
@@ -436,6 +442,8 @@ public class RoomStatusPanel extends JPanel {
                 Room newRoom = new Room(0, no, type, price, "available".equalsIgnoreCase(st));
                 roomDAO.add(newRoom);
                 loadRooms(null);
+                if (onRoomChanged != null)
+                    onRoomChanged.run();
                 dialog.dispose();
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(dialog, "Invalid price format.");
@@ -478,6 +486,9 @@ public class RoomStatusPanel extends JPanel {
 
     // ── Helpers ───────────────────────────────────────────────────────
     private String resolveStatus(Room room) {
+        String status = room.getStatus();
+        if (status != null && !status.isEmpty())
+            return status;
         return room.isAvailable() ? "available" : "booked";
     }
 

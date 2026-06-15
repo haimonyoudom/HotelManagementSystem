@@ -8,8 +8,11 @@ import hotel.model.User;
 import hotel.model.Customer;
 import hotel.util.PasswordHasher;
 import hotel.ui.staff.StaffDashboard;
+import hotel.ui.admin.AdminDashboard;
+import hotel.ui.customer.CustomerDashboard;
 
 import javax.swing.*;
+import java.awt.Window;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -38,12 +41,38 @@ public class AuthLogic {
             DBConnection.getConnection();
             AuthService authService = new AuthService();
             if (authService.login(username, password)) {
+                User currentUser = authService.getCurrentUser();
+                if (currentUser == null) {
+                    setError(statusLbl, "Login failed: user not found.");
+                    return;
+                }
+
+                String role = currentUser.getRole() != null ? currentUser.getRole().toLowerCase() : "";
+
                 setSuccess(statusLbl, "Login successful! Welcome back!");
                 userField.setText("");
                 passField.setText("");
-                User currentUser = authService.getCurrentUser();
-                if (currentUser != null)
-                    SwingUtilities.invokeLater(() -> new StaffDashboard(currentUser).setVisible(true));
+
+                // Close the login window first
+                Window loginWindow = SwingUtilities.getWindowAncestor(statusLbl);
+                if (loginWindow != null)
+                    loginWindow.dispose();
+
+                switch (role) {
+                    case "admin":
+                        SwingUtilities.invokeLater(() -> new AdminDashboard(currentUser).setVisible(true));
+                        break;
+                    case "staff":
+                        SwingUtilities.invokeLater(() -> new StaffDashboard(currentUser).setVisible(true));
+                        break;
+                    case "customer":
+                        SwingUtilities.invokeLater(() -> new CustomerDashboard(currentUser).setVisible(true));
+                        break;
+                    default:
+                        setError(statusLbl, "Unknown role: " + role + ". Access denied.");
+                        break;
+                }
+
             } else {
                 setError(statusLbl, "Invalid username or password.");
             }

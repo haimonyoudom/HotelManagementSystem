@@ -278,9 +278,10 @@ public class StaffDashboard extends JFrame {
                 panel = new CheckInOutPanel();
                 break;
             case "Rooms":
-                panel = new RoomStatusPanel();
+                panel = new RoomStatusPanel(() -> refreshDashboard());
                 break;
             default:
+                refreshDashboard();
                 panel = mainPanel;
                 break;
         }
@@ -489,12 +490,31 @@ public class StaffDashboard extends JFrame {
         row.setMinimumSize(new Dimension(0, 80));
 
         int[] stats = loadStatisticsData();
-        row.add(createStatCard("PENDING BOOKINGS", String.valueOf(stats[0]), "Awaiting Approval",
+
+        int confirmedCheckins = stats[1];
+        int checkedIn = stats[2];
+        int totalExpected = confirmedCheckins + checkedIn;
+
+        row.add(createStatCard("PENDING BOOKINGS",
+                String.valueOf(stats[0]),
+                "Awaiting approval",
                 UIConstants.STAT_PURPLE));
-        row.add(createStatCard("TODAY'S CHECK-INS", String.valueOf(stats[1]), stats[1] + " remaining",
+
+        row.add(createStatCard("CHECK-INS",
+                String.valueOf(checkedIn),
+                "checked in of " + totalExpected,
                 UIConstants.STAT_BLUE));
-        row.add(createStatCard("TODAY'S CHECK-OUTS", String.valueOf(stats[2]), "All processed", UIConstants.STAT_RED));
-        row.add(createStatCard("OCCUPIED ROOMS", String.valueOf(stats[3]), "of 20 total", UIConstants.STAT_YELLOW));
+
+        row.add(createStatCard("CHECK-OUTS",
+                String.valueOf(checkedIn),
+                checkedIn + " pending departure",
+                UIConstants.STAT_RED));
+
+        row.add(createStatCard("OCCUPIED ROOMS",
+                String.valueOf(stats[3]),
+                "of " + stats[4] + " total",
+                UIConstants.STAT_YELLOW));
+
         return row;
     }
 
@@ -707,6 +727,27 @@ public class StaffDashboard extends JFrame {
         return box;
     }
 
+    // ── Reload ───────────────────────────────────────────
+    private void refreshDashboard() {
+        mainPanel.removeAll();
+        mainPanel.add(buildHeaderBar(), BorderLayout.NORTH);
+
+        JPanel contentWrapper = new JPanel(new BorderLayout(0, 20));
+        contentWrapper.setBackground(UIConstants.THEME_WHITE_BG);
+        contentWrapper.setBorder(BorderFactory.createEmptyBorder(16, 30, 30, 30));
+        contentWrapper.add(buildGreetingCard(), BorderLayout.NORTH);
+
+        JPanel innerBody = new JPanel(new BorderLayout(0, 24));
+        innerBody.setBackground(UIConstants.THEME_WHITE_BG);
+        innerBody.add(buildStatCardsRow(), BorderLayout.NORTH);
+        innerBody.add(buildBottomRow(), BorderLayout.CENTER);
+
+        contentWrapper.add(innerBody, BorderLayout.CENTER);
+        mainPanel.add(contentWrapper, BorderLayout.CENTER);
+        mainPanel.revalidate();
+        mainPanel.repaint();
+    }
+
     // ── Data loaders ──────────────────────────────────────────────────
     private Object[][] loadBookingData() {
         List<Booking> bookings = bookingService.getAllBookings();
@@ -738,29 +779,48 @@ public class StaffDashboard extends JFrame {
     }
 
     private int[] loadRoomStatusCounts() {
-        int[] c = { 0, 0, 0, 0 };
+        int[] c = { 0, 0, 0, 0 }; // occupied, available, cleaning, maintenance
         for (Room r : roomService.getAllRooms()) {
-            if (r.isAvailable())
-                c[1]++;
-            else
-                c[0]++;
+            String status = r.getStatus() != null ? r.getStatus() : (r.isAvailable() ? "available" : "booked");
+            switch (status.toLowerCase()) {
+                case "available":
+                    c[1]++;
+                    break;
+                case "cleaning":
+                    c[2]++;
+                    break;
+                case "maintenance":
+                    c[3]++;
+                    break;
+                default:
+                    c[0]++;
+                    break; // booked = occupied
+            }
         }
         return c;
     }
 
     private int[] loadStatisticsData() {
-        int[] s = { 0, 0, 0, 0 };
-        String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        // [0]pending, [1]confirmed(ready checkin), [2]checked_in(ready checkout),
+        // [3]occupied, [4]total rooms
+        int[] s = { 0, 0, 0, 0, 0 };
+
         for (Booking b : bookingService.getAllBookings()) {
-            if ("pending".equalsIgnoreCase(b.getStatus()))
+            String status = b.getStatus() != null ? b.getStatus() : "";
+            if ("pending".equalsIgnoreCase(status))
                 s[0]++;
-            if (today.equals(b.getCheckInDate()))
-                s[1]++;
-            if (today.equals(b.getCheckOutDate()))
-                s[2]++;
+            if ("confirmed".equalsIgnoreCase(status))
+                s[1]++; // awaiting check-in
+            if ("checked_in".equalsIgnoreCase(status))
+                s[2]++; // awaiting check-out
         }
-        for (Room r : roomService.getAllRooms()) {
-            if (!r.isAvailable())
+
+        List<Room> allRooms = roomService.getAllRooms();
+        s[4] = allRooms.size();
+        for (Room r : allRooms) {
+            String status = r.getStatus() != null ? r.getStatus()
+                    : (r.isAvailable() ? "available" : "booked");
+            if (!"available".equalsIgnoreCase(status))
                 s[3]++;
         }
         return s;
@@ -773,16 +833,5 @@ public class StaffDashboard extends JFrame {
 
     private String getCurrentDateShort() {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM d"));
-    }
-
-    // ── Entry point ───────────────────────────────────────────────────
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            User u = new User();
-            u.setUsername("staff1");
-            u.setName("John");
-            u.setEmail("staff@gmail.com");
-            new StaffDashboard(u).setVisible(true);
-        });
     }
 }

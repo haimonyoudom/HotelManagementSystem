@@ -214,8 +214,6 @@ public class CheckInOutPanel extends JPanel {
         JScrollPane scroll = new JScrollPane(scheduleTable);
         scroll.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1));
         scroll.getViewport().setBackground(Color.WHITE);
-        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
-        scroll.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 0));
 
         panel.add(hdr, BorderLayout.NORTH);
         panel.add(scroll, BorderLayout.CENTER);
@@ -248,7 +246,7 @@ public class CheckInOutPanel extends JPanel {
                 return;
             }
 
-            bookingService.confirmBooking(bookingId);
+            bookingService.checkInBooking(bookingId);
 
             JOptionPane.showMessageDialog(this,
                     "Check-in successful for Booking #" + bookingId + ".",
@@ -280,6 +278,11 @@ public class CheckInOutPanel extends JPanel {
                 return;
             }
 
+            if (!"checked_in".equalsIgnoreCase(booking.getStatus())) {
+                showError("Booking #" + bookingId + " has not checked in yet.");
+                return;
+            }
+
             int confirm = JOptionPane.showConfirmDialog(this,
                     "Process departure for Booking #" + bookingId + "?",
                     "Confirm Check-Out", JOptionPane.YES_NO_OPTION);
@@ -302,7 +305,7 @@ public class CheckInOutPanel extends JPanel {
         }
     }
 
-    // ── Load schedule (confirmed only) ───────────────────────────────
+    // ── Load schedule (confirmed + checked_in) ──────────────────────
     private void loadSchedule() {
         scheduleModel.setRowCount(0);
         try {
@@ -310,13 +313,13 @@ public class CheckInOutPanel extends JPanel {
             for (Booking b : bookings) {
                 String status = b.getStatus() != null ? b.getStatus() : "";
 
-                // Only show confirmed bookings
-                if (!"confirmed".equalsIgnoreCase(status))
+                // confirmed = waiting to check in, checked_in = waiting to check out
+                if (!"confirmed".equalsIgnoreCase(status) && !"checked_in".equalsIgnoreCase(status))
                     continue;
 
                 String guestName = "N/A";
                 String roomNo = "N/A";
-                String type = "Check-out";
+                String type = "confirmed".equalsIgnoreCase(status) ? "Check-in" : "Check-out";
 
                 try {
                     Customer c = customerDAO.getById(b.getCustomerId());
@@ -501,6 +504,10 @@ public class CheckInOutPanel extends JPanel {
                 case "pending":
                     bg = new Color(255, 243, 220);
                     fg = new Color(180, 110, 20);
+                    break;
+                case "checked_in":
+                    bg = new Color(220, 235, 255);
+                    fg = new Color(40, 80, 200);
                     break;
                 case "cancelled":
                     bg = new Color(255, 225, 225);
