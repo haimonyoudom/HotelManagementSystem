@@ -1,33 +1,18 @@
 package hotel.ui.customer;
 
 import static hotel.ui.customer.CustomerDashboard.*;
+import hotel.model.Room;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import javax.swing.*;
 
 public class BrowseRoomsPanel extends JPanel {
 
     // ── Data ──────────────────────────────────────────────────────────────────
-    private static final String[] FILTERS = {
-        "All Types", "Standard", "Deluxe", "Suite", "Family"
-    };
-
-    // { name, type, description, price, badge }
-    private static final Object[][] ROOMS = {
-        {"Deluxe King",   "Deluxe",   "Ocean view · 2 guests",  "$120/night", "Popular"},
-        {"Premier Suite", "Suite",    "City view · 3 guests",   "$160/night", "Luxury"},
-        {"Family Room",   "Family",   "2 bedrooms · 4 guests",  "$210/night", "Best Seller"},
-        {"Standard Twin", "Standard", "City view · 2 guests",   "$85/night",  "Budget"},
-    };
-
-    private static final String[] ROOM_IMAGES = {
-        "/hotel/images/resources/hotel2.jpg",
-        "/hotel/images/resources/hotel3.jpg",
-        "/hotel/images/resources/hotel2.jpg",
-        "/hotel/images/resources/hotel1.jpg",
-    };
+    private static final String ALL_TYPES = "All Types";
 
     // ── Palette ───────────────────────────────────────────────────────────────
     private static final Color C_PAGE_BG  = new Color(250, 250, 250);
@@ -67,6 +52,8 @@ public class BrowseRoomsPanel extends JPanel {
     private JPanel       cardsPanel;
     private JLabel       countLbl;
     private FilterChip[] chips;
+    private List<Room>   rooms = new ArrayList<>();
+    private List<String> filters = new ArrayList<>();
 
     // =========================================================================
     public BrowseRoomsPanel() {
@@ -78,6 +65,8 @@ public class BrowseRoomsPanel extends JPanel {
 
     // ── Build the panel ───────────────────────────────────────────────────────
     private void build() {
+        loadRooms();
+
         // NORTH: topbar (reuses CustomerDashboard.buildTopbar)
         add(buildTopbar("ROOMS"), BorderLayout.NORTH);
 
@@ -128,10 +117,10 @@ public class BrowseRoomsPanel extends JPanel {
         JPanel chipsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         chipsRow.setOpaque(false);
         chipsRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-        chips = new FilterChip[FILTERS.length];
+        chips = new FilterChip[filters.size()];
         FontMetrics fm = getFontMetrics(F_CHIP);
-        for (int i = 0; i < FILTERS.length; i++) {
-            final String f = FILTERS[i];
+        for (int i = 0; i < filters.size(); i++) {
+            final String f = filters.get(i);
             FilterChip chip = new FilterChip(f, f.equals(activeFilter));
             chip.setPreferredSize(new Dimension(fm.stringWidth(f) + 36, 26));
             chip.addActionListener(e -> onFilter(f));
@@ -167,26 +156,23 @@ public class BrowseRoomsPanel extends JPanel {
     private void renderCards() {
         cardsPanel.removeAll();
 
-        List<Integer> visible = new ArrayList<>();
-        for (int i = 0; i < ROOMS.length; i++) {
-            if (activeFilter.equals("All Types") || ((String) ROOMS[i][1]).equals(activeFilter))
-                visible.add(i);
+        List<Room> visible = new ArrayList<>();
+        for (Room room : rooms) {
+            if (activeFilter.equals(ALL_TYPES) || CustomerData.normalizeStatus(room.getType()).equals(activeFilter))
+                visible.add(room);
         }
 
         if (visible.isEmpty()) {
             cardsPanel.setLayout(new BorderLayout());
-            JLabel empty = makeLabel("No rooms match \"" + activeFilter + "\"", F_SUB, C_MUTED);
+            String text = rooms.isEmpty() ? "No available rooms found in database"
+                    : "No rooms match \"" + activeFilter + "\"";
+            JLabel empty = makeLabel(text, F_SUB, C_MUTED);
             empty.setHorizontalAlignment(SwingConstants.CENTER);
             cardsPanel.add(empty, BorderLayout.CENTER);
         } else {
             cardsPanel.setLayout(new GridLayout(0, COLS, GAP, GAP));
-            for (int idx : visible) {
-                Object[] r = ROOMS[idx];
-                cardsPanel.add(buildCard(
-                    (String) r[0], (String) r[2],
-                    (String) r[3], (String) r[4],
-                    ROOM_IMAGES[idx]
-                ));
+            for (Room room : visible) {
+                cardsPanel.add(buildCard(room));
             }
         }
 
@@ -195,7 +181,13 @@ public class BrowseRoomsPanel extends JPanel {
     }
 
     // ── Single room card ──────────────────────────────────────────────────────
-    private JPanel buildCard(String name, String desc, String price, String badge, String imagePath) {
+    private JPanel buildCard(Room room) {
+        String name = CustomerData.roomTitle(room);
+        String desc = CustomerData.roomDescription(room);
+        String price = CustomerData.pricePerNight(room);
+        String badge = CustomerData.normalizeStatus(room.getType());
+        String imagePath = imagePathFor(room.getType());
+
         JPanel card = new JPanel(new BorderLayout(0, 0)) {
             private boolean hov = false;
             {
@@ -293,7 +285,7 @@ public class BrowseRoomsPanel extends JPanel {
         btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         btn.setPreferredSize(new Dimension(Integer.MAX_VALUE, 30));
         btn.addActionListener(e -> {
-            BookingPanel.selectBookingRoom(name, price);
+            BookingPanel.selectBookingRoom(room);
             CustomerDashboard.switchTo("booking");
         });
         info.add(btn);
@@ -321,9 +313,35 @@ public class BrowseRoomsPanel extends JPanel {
 
     private String countText() {
         int n = 0;
-        for (Object[] r : ROOMS)
-            if (activeFilter.equals("All Types") || ((String) r[1]).equals(activeFilter)) n++;
+        for (Room room : rooms)
+            if (activeFilter.equals(ALL_TYPES) || CustomerData.normalizeStatus(room.getType()).equals(activeFilter)) n++;
         return n + (n == 1 ? " available room" : " available rooms");
+    }
+
+    private void loadRooms() {
+        try {
+            rooms = CustomerData.getAvailableRooms();
+        } catch (Exception e) {
+            rooms = new ArrayList<>();
+            JOptionPane.showMessageDialog(this, "Could not load rooms from database: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+        LinkedHashSet<String> uniqueTypes = new LinkedHashSet<>();
+        uniqueTypes.add(ALL_TYPES);
+        for (Room room : rooms) {
+            if (room.getType() != null && !room.getType().trim().isEmpty()) {
+                uniqueTypes.add(CustomerData.normalizeStatus(room.getType()));
+            }
+        }
+        filters = new ArrayList<>(uniqueTypes);
+        activeFilter = ALL_TYPES;
+    }
+
+    private static String imagePathFor(String type) {
+        String t = type == null ? "" : type.toLowerCase();
+        if (t.contains("suite")) return "/hotel/images/resources/hotel3.jpg";
+        if (t.contains("standard")) return "/hotel/images/resources/hotel1.jpg";
+        return "/hotel/images/resources/hotel2.jpg";
     }
 
     private static JLabel makeLabel(String text, Font font, Color color) {

@@ -3,6 +3,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "GUILauncher",
+      "request": "launch",
+      "mainClass": "hotel.main.GUILauncher",
+      "projectName": "hotelManagementSystem_c4c46df0"
+    },
+    {
+      "type": "java",
       "name": "Run Console App (hotel.main.Main)",
       "request": "launch",
       "mainClass": "hotel.main.Main"

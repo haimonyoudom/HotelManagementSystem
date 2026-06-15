@@ -1,12 +1,14 @@
 package hotel.ui.customer;
 
+import hotel.model.User;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import javax.swing.*;
 
-public class CustomerDashboard {
+public class CustomerDashboard extends JFrame {
 
     // ── Palette ────────────────────────────────────────────────────────
     public static final Color BG_MAIN      = new Color(250, 250, 250);
@@ -68,51 +70,55 @@ public class CustomerDashboard {
     public static JPanel           historyPanel;
 
     // =========================================================================
+    public CustomerDashboard() {
+        this(null);
+    }
+
+    public CustomerDashboard(User currentUser) {
+        CustomerData.setCurrentUser(currentUser);
+        initializeFrame();
+    }
+
     public static void main(String[] args) {
         try { UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); }
         catch (Exception ignored) {}
 
-        SwingUtilities.invokeLater(() -> {
+        SwingUtilities.invokeLater(() -> new CustomerDashboard().setVisible(true));
+    }
 
-            // ── Frame ──────────────────────────────────────────────────
-            JFrame frame = new JFrame("HMS - Hotel Management System");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setMinimumSize(new Dimension(800, 600));
-            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-            frame.setLayout(new BorderLayout());
-            frame.getContentPane().setBackground(BG_MAIN);
+    private void initializeFrame() {
+        setTitle("HMS - Hotel Management System");
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setMinimumSize(new Dimension(800, 600));
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setLayout(new BorderLayout());
+        getContentPane().setBackground(BG_MAIN);
 
-            // ── Sidebar (WEST) ─────────────────────────────────────────
-            JPanel sidebar = buildSidebar(frame);
-            frame.add(sidebar, BorderLayout.WEST);
+        JPanel sidebar = buildSidebar(this);
+        add(sidebar, BorderLayout.WEST);
 
-            // ── Card panel (CENTER) — one card per screen ──────────────
-            cardLayout = new CardLayout();
-            cardPanel  = new JPanel(cardLayout);
-            cardPanel.setBackground(BG_MAIN);
-            frame.add(cardPanel, BorderLayout.CENTER);
+        cardLayout = new CardLayout();
+        cardPanel  = new JPanel(cardLayout);
+        cardPanel.setBackground(BG_MAIN);
+        add(cardPanel, BorderLayout.CENTER);
 
-            // ── Build each screen and add as a card ────────────────────
-            dashboardPanel = buildDashboardCard();
-            roomsPanel     = new BrowseRoomsPanel();
-            bookingPanel   = new JPanel(new BorderLayout());
-            paymentPanel   = new JPanel(new BorderLayout());
-            historyPanel   = new JPanel(new BorderLayout());
+        dashboardPanel = buildDashboardCard();
+        roomsPanel     = new BrowseRoomsPanel();
+        bookingPanel   = new JPanel(new BorderLayout());
+        paymentPanel   = new JPanel(new BorderLayout());
+        historyPanel   = new JPanel(new BorderLayout());
 
-            cardPanel.add(dashboardPanel, CARD_DASHBOARD);
-            cardPanel.add(roomsPanel,     CARD_ROOMS);
-            cardPanel.add(bookingPanel,   CARD_BOOKING);
-            cardPanel.add(paymentPanel,   CARD_PAYMENT);
-            cardPanel.add(historyPanel,   CARD_HISTORY);
+        cardPanel.add(dashboardPanel, CARD_DASHBOARD);
+        cardPanel.add(roomsPanel,     CARD_ROOMS);
+        cardPanel.add(bookingPanel,   CARD_BOOKING);
+        cardPanel.add(paymentPanel,   CARD_PAYMENT);
+        cardPanel.add(historyPanel,   CARD_HISTORY);
 
-            // ── Delegate content building to child panel classes ────────
-            BookingPanel.build(bookingPanel);
-            PaymentPanel.build(paymentPanel);
-            BookingHistoryPanel.build(historyPanel);
+        BookingPanel.build(bookingPanel);
+        PaymentPanel.build(paymentPanel);
+        BookingHistoryPanel.build(historyPanel);
 
-            switchTo(CARD_DASHBOARD);
-            frame.setVisible(true);
-        });
+        switchTo(CARD_DASHBOARD);
     }
 
     // =========================================================================
@@ -406,7 +412,12 @@ public class CustomerDashboard {
         text.setOpaque(false);
         text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
 
-        JLabel greet = new JLabel("Good morning, John");
+        String nameText = "Guest";
+        User user = CustomerData.getCurrentUser();
+        if (user != null && user.getUsername() != null && !user.getUsername().trim().isEmpty()) {
+            nameText = user.getUsername().trim();
+        }
+        JLabel greet = new JLabel("Good morning, " + nameText);
         greet.setFont(F_LARGE);
         greet.setForeground(TXT_PRIMARY);
 
@@ -428,10 +439,11 @@ public class CustomerDashboard {
         row.setPreferredSize(new Dimension(0, 90));
         row.setMinimumSize(new Dimension(0, 80));
 
-        row.add(makeStatCard("12",     "Total Bookings",   BLUE,   BLUE_DIM));
-        row.add(makeStatCard("$1,234", "Total Spent",      ORANGE, ORANGE_DIM));
-        row.add(makeStatCard("1",      "Pending Approval", PURPLE, PURPLE_DIM));
-        row.add(makeStatCard("2",      "Checked In Now",   TEAL,   TEAL_DIM));
+        CustomerData.DashboardStats stats = loadDashboardStats();
+        row.add(makeStatCard(String.valueOf(stats.totalBookings), "Total Bookings", BLUE, BLUE_DIM));
+        row.add(makeStatCard(CustomerData.money(stats.totalSpent), "Total Spent", ORANGE, ORANGE_DIM));
+        row.add(makeStatCard(String.valueOf(stats.pendingApproval), "Pending Approval", PURPLE, PURPLE_DIM));
+        row.add(makeStatCard(String.valueOf(stats.checkedInNow), "Checked In Now", TEAL, TEAL_DIM));
         return row;
     }
 
@@ -497,14 +509,23 @@ public class CustomerDashboard {
         rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
         rows.setBorder(BorderFactory.createEmptyBorder(0, 12, 8, 12));
 
-        Object[][] data = {
-            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Checked In",  new Color(0x065F46), new Color(0x6EE7B7)},
-            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Pending",     new Color(0x92400E), new Color(0xFCD34D)},
-            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Approved",    new Color(0x1E3A8A), new Color(0x93C5FD)},
-            {"Deluxe King · Rm 304","Apr 28 – May 2, 2026","Checked Out", new Color(0x374151), new Color(0x9CA3AF)},
-        };
-        for (Object[] r : data) {
-            rows.add(makeBookingRow((String)r[0], (String)r[1], (String)r[2], (Color)r[3], (Color)r[4]));
+        List<CustomerData.BookingRow> data = loadDashboardStats().recentBookings;
+        if (data.isEmpty()) {
+            JLabel empty = new JLabel("No bookings found in database");
+            empty.setFont(F_SMALL);
+            empty.setForeground(TXT_MUTED);
+            empty.setBorder(BorderFactory.createEmptyBorder(12, 8, 0, 8));
+            rows.add(empty);
+        }
+        for (int i = 0; i < Math.min(4, data.size()); i++) {
+            CustomerData.BookingRow booking = data.get(i);
+            String status = CustomerData.normalizeStatus(booking.booking.getStatus());
+            String name = CustomerData.roomTitle(booking.room) + " - "
+                    + (booking.room != null ? "Rm " + booking.room.getRoomNumber() : "Room unavailable");
+            String dates = CustomerData.formatDate(booking.booking.getCheckInDate()) + " - "
+                    + CustomerData.formatDate(booking.booking.getCheckOutDate());
+            Color[] colors = statusColors(status);
+            rows.add(makeBookingRow(name, dates, status, colors[0], colors[1]));
             rows.add(Box.createVerticalStrut(6));
         }
 
@@ -617,6 +638,17 @@ public class CustomerDashboard {
         cardLayout.show(cardPanel, page);
     }
 
+    public static void refreshCustomerScreens() {
+        BookingHistoryPanel.refresh();
+        if (cardPanel != null && dashboardPanel != null) {
+            cardPanel.remove(dashboardPanel);
+            dashboardPanel = buildDashboardCard();
+            cardPanel.add(dashboardPanel, CARD_DASHBOARD);
+            cardPanel.revalidate();
+            cardPanel.repaint();
+        }
+    }
+
     // =========================================================================
     // HELPERS — user chip, logout icon, bar chart, action button
     // =========================================================================
@@ -631,7 +663,12 @@ public class CustomerDashboard {
             BorderFactory.createEmptyBorder(12, 14, 12, 14)
         ));
 
-        JLabel avatar = new JLabel("JD") {
+        User user = CustomerData.getCurrentUser();
+        String displayName = user != null && user.getUsername() != null ? user.getUsername() : "Guest";
+        String emailText = user != null && user.getEmail() != null ? user.getEmail() : "";
+        String initials = makeInitials(displayName);
+
+        JLabel avatar = new JLabel(initials) {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -654,11 +691,11 @@ public class CustomerDashboard {
         info.setBackground(new Color(245, 245, 245));
         info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
 
-        JLabel name = new JLabel("John Doe");
+        JLabel name = new JLabel(displayName);
         name.setFont(new Font("Segoe UI", Font.BOLD, 12));
         name.setForeground(NAVY);
 
-        JLabel email = new JLabel("customer@gmail.com");
+        JLabel email = new JLabel(emailText);
         email.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         email.setForeground(TXT_MUTED);
 
@@ -770,5 +807,38 @@ public class CustomerDashboard {
     // ── Kept for backward compat (child panels that call addSidebar) ───
     public static void addSidebar(JPanel panel, String activePage) {
         // No-op: sidebar is now in the frame WEST, not duplicated per card
+    }
+
+    private static CustomerData.DashboardStats loadDashboardStats() {
+        try {
+            return CustomerData.getDashboardStats();
+        } catch (Exception e) {
+            return new CustomerData.DashboardStats(0, 0, 0, 0, java.util.Collections.emptyList());
+        }
+    }
+
+    private static Color[] statusColors(String status) {
+        switch (status) {
+            case "Checked In":
+                return new Color[] { new Color(0x065F46), new Color(0x6EE7B7) };
+            case "Pending":
+                return new Color[] { new Color(0x92400E), new Color(0xFCD34D) };
+            case "Approved":
+                return new Color[] { new Color(0x1E3A8A), new Color(0x93C5FD) };
+            case "Cancelled":
+                return new Color[] { new Color(0x991B1B), new Color(0xFCA5A5) };
+            default:
+                return new Color[] { new Color(0x374151), new Color(0x9CA3AF) };
+        }
+    }
+
+    private static String makeInitials(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return "G";
+        }
+        String[] parts = name.trim().split("\\s+");
+        String first = parts[0].substring(0, 1);
+        String second = parts.length > 1 ? parts[1].substring(0, 1) : "";
+        return (first + second).toUpperCase();
     }
 }

@@ -41,6 +41,7 @@ public class PaymentPanel {
     // ── State ──────────────────────────────────────────────────────────
     private static int    depositPct     = 20;
     private static int    roomTotal      = 0;
+    private static int    bookingId      = 0;
     private static String bookingRef     = "#BK-2026-0001";
     private static String bookingRoom    = "Room not selected";
     private static String bookingCheckin = "—";
@@ -171,7 +172,7 @@ public class PaymentPanel {
         inner.add(sizeBox(amountFlow, 40));
         inner.add(Box.createVerticalStrut(2));
 
-        amountSubLbl = lbl((100 - depositPct) + "% of $" + roomTotal + " total", F_SMALL, TXT_MUTED);
+        amountSubLbl = lbl(depositPct + "% of $" + roomTotal + " total", F_SMALL, TXT_MUTED);
 
         JPanel amountSubFlow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
         amountSubFlow.setBackground(C_CARD_BG);
@@ -223,7 +224,20 @@ public class PaymentPanel {
         markBtn.setBorderPainted(false);
         markBtn.setFocusPainted(false);
         markBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        markBtn.addActionListener(e -> CustomerDashboard.switchTo("history"));
+        markBtn.addActionListener(e -> {
+            try {
+                if (bookingId <= 0) {
+                    throw new IllegalStateException("No saved booking is selected.");
+                }
+                int amount = (int) Math.round(roomTotal * depositPct / 100.0);
+                CustomerData.markBookingPaid(bookingId, amount);
+                CustomerDashboard.refreshCustomerScreens();
+                CustomerDashboard.switchTo("history");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(card, "Could not save payment: " + ex.getMessage(),
+                        "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
         inner.add(sizeBox(markBtn, 40));
         inner.add(Box.createVerticalStrut(8));
     }
@@ -395,14 +409,13 @@ public class PaymentPanel {
     // ── Live update ────────────────────────────────────────────────────
     static void setDeposit(int pct) {
         depositPct = pct;
-        int payPct = 100 - pct;
-        int amt    = (int) Math.round(roomTotal * payPct / 100.0);
+        int amt    = (int) Math.round(roomTotal * pct / 100.0);
 
         if (btn20 != null) { btn20.putClientProperty("active", pct == 20); btn20.repaint(); }
         if (btn30 != null) { btn30.putClientProperty("active", pct == 30); btn30.repaint(); }
 
         if (amountLbl    != null) amountLbl.setText("$" + String.format("%.2f", (double) amt));
-        if (amountSubLbl != null) amountSubLbl.setText(payPct + "% of $" + roomTotal + " total");
+        if (amountSubLbl != null) amountSubLbl.setText(pct + "% of $" + roomTotal + " total");
 
         if (summaryValues[0] != null) summaryValues[0].setText(bookingRoom);
         if (summaryValues[1] != null) summaryValues[1].setText(pct + "%");
@@ -410,8 +423,9 @@ public class PaymentPanel {
         if (summaryValues[3] != null) summaryValues[3].setText("$" + amt);
     }
 
-    public static void setBookingDetails(String ref, String room,
+    public static void setBookingDetails(int savedBookingId, String ref, String room,
                                           String checkin, String checkout, int total) {
+        bookingId        = savedBookingId;
         bookingRef      = ref;
         bookingRoom     = room;
         bookingCheckin  = (checkin  != null && !checkin.isEmpty())  ? checkin  : "—";
@@ -421,6 +435,11 @@ public class PaymentPanel {
 
         if (scanSubLbl != null) scanSubLbl.setText("Booking " + ref + " · " + room);
         setDeposit(20);
+    }
+
+    public static void setBookingDetails(String ref, String room,
+                                          String checkin, String checkout, int total) {
+        setBookingDetails(0, ref, room, checkin, checkout, total);
     }
 
     private static JPanel makeCard(Color bg, Color border) {

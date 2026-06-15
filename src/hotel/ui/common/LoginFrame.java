@@ -6,6 +6,7 @@ import hotel.model.User;
 import hotel.util.PasswordHasher;
 import hotel.ui.customer.CustomerDashboard;
 import hotel.ui.admin.AdminDashboard;
+import hotel.ui.staff.StaffDashboard;
 import hotel.config.DBInitializer;
 import javax.swing.*;
 import java.awt.*;
@@ -15,7 +16,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class LoginFrame {
+public class LoginFrame extends JFrame {
 
     static JPanel loginPanel;
     static JPanel signupPanel;
@@ -35,6 +36,10 @@ public class LoginFrame {
     static final Font F_REG   = new Font("Segoe UI", Font.PLAIN, 13);
     static final Font F_SMALL = new Font("Segoe UI", Font.PLAIN, 11);
 
+    public LoginFrame() {
+        initializeFrame();
+    }
+
     public static void main(String[] args) {
         try {
             DBInitializer.initializeDatabase();
@@ -46,12 +51,16 @@ public class LoginFrame {
         try { UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); }
         catch (Exception ignored) {}
 
-        JFrame frame = new JFrame("Hotel Management System - Login");
-        frame.setSize(980, 760);
-        frame.setLayout(null);
-        frame.setResizable(false);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.getContentPane().setBackground(BG_MAIN);
+        SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));
+    }
+
+    private void initializeFrame() {
+        setTitle("Hotel Management System - Login");
+        setSize(980, 760);
+        setLayout(null);
+        setResizable(false);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        getContentPane().setBackground(BG_MAIN);
 
         loginPanel = new JPanel();
         signupPanel = new JPanel();
@@ -78,8 +87,8 @@ public class LoginFrame {
         signupRightBg.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, BORDER));
         signupPanel.add(signupRightBg);
 
-        frame.add(loginPanel);
-        frame.add(signupPanel);
+        add(loginPanel);
+        add(signupPanel);
 
         buildLoginScreen();
         buildSignupScreen();
@@ -87,8 +96,7 @@ public class LoginFrame {
         loginPanel.setVisible(true);
         signupPanel.setVisible(false);
 
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
+        setLocationRelativeTo(null);
     }
 
     private static void buildLoginScreen() {
@@ -370,12 +378,29 @@ public class LoginFrame {
     }
 
     private static void openDashboard(User user) {
-        if ("Customer".equalsIgnoreCase(user.getRole())) {
-            new Thread(() -> CustomerDashboard.main(new String[]{})).start();
-        } else {
-            new Thread(() -> AdminDashboard.main(new String[]{})).start();
-        }
-        SwingUtilities.getWindowAncestor(loginPanel).dispose();
+        SwingUtilities.invokeLater(() -> {
+            String role = user.getRole() != null ? user.getRole().trim().toLowerCase() : "";
+            switch (role) {
+                case "admin":
+                    new AdminDashboard(user).setVisible(true);
+                    break;
+                case "staff":
+                    new StaffDashboard(user).setVisible(true);
+                    break;
+                case "customer":
+                    new CustomerDashboard(user).setVisible(true);
+                    break;
+                default:
+                    loginStatus.setForeground(new Color(170, 34, 62));
+                    loginStatus.setText("Unknown role: " + user.getRole());
+                    return;
+            }
+
+            Window loginWindow = SwingUtilities.getWindowAncestor(loginPanel);
+            if (loginWindow != null) {
+                loginWindow.dispose();
+            }
+        });
     }
 
     private static void buildIllustrationPanel(JPanel parent) {
