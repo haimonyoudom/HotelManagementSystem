@@ -50,8 +50,7 @@ public class BookingService extends BaseService {
 					checkIn,
 					checkOut,
 					room.getPricePerNight() * nights,
-					"pending"
-			);
+					"pending");
 			bookingDAO.add(booking);
 
 			room.setAvailable(false);
@@ -99,6 +98,20 @@ public class BookingService extends BaseService {
 			return true;
 		} catch (SQLException e) {
 			throw new RuntimeException("Failed to confirm booking", e);
+		}
+	}
+
+	public boolean checkInBooking(int bookingId) {
+		try {
+			Booking booking = bookingDAO.getById(bookingId);
+			if (booking == null)
+				return false;
+			booking.setStatus("checked_in");
+			bookingDAO.update(booking);
+			logAction("Checked in booking id=" + bookingId);
+			return true;
+		} catch (SQLException e) {
+			throw new RuntimeException("Failed to check in booking", e);
 		}
 	}
 

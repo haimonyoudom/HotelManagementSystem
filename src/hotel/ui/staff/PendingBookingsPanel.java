@@ -1,154 +1,408 @@
 package hotel.ui.staff;
 
-import hotel.dao.BookingDAO;
-import hotel.dao.RoomDAO;
+import hotel.ui.staff.util.UIConstants;
 import hotel.model.Booking;
+import hotel.model.Customer;
 import hotel.model.Room;
-import hotel.ui.common.UITheme;
+import hotel.service.BookingService;
+import hotel.dao.CustomerDAO;
+import hotel.dao.RoomDAO;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.table.*;
 import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.util.EventObject;
 import java.util.List;
+import java.sql.SQLException;
 
 public class PendingBookingsPanel extends JPanel {
-    private final BookingDAO bookingDAO = new BookingDAO();
-    private final RoomDAO roomDAO = new RoomDAO();
 
-    private final DefaultTableModel tableModel = new DefaultTableModel(
-            new Object[]{"ID", "Customer ID", "Room ID", "Check In", "Check Out", "Total", "Status"}, 0
-    ) {
-        @Override
-        public boolean isCellEditable(int row, int column) {
-            return false;
-        }
-    };
-
-    private final JTable table = new JTable(tableModel);
+    private BookingService bookingService;
+    private CustomerDAO customerDAO;
+    private RoomDAO roomDAO;
+    private JTable bookingsTable;
+    private DefaultTableModel tableModel;
+    private JLabel pageInfoLabel;
+    private int currentPage = 0;
+    private int pageSize = 10;
+    private JTextField filterField;
 
     public PendingBookingsPanel() {
-        setLayout(new BorderLayout(16, 16));
-        setBackground(UITheme.BG);
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        this.bookingService = new BookingService();
+        this.customerDAO = new CustomerDAO();
+        this.roomDAO = new RoomDAO();
+        setLayout(new BorderLayout());
+        setBackground(UIConstants.THEME_WHITE_BG);
+        setBorder(BorderFactory.createEmptyBorder(20, 30, 30, 30));
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        actions.setOpaque(false);
+        add(buildHeader(), BorderLayout.NORTH);
+        add(buildContent(), BorderLayout.CENTER);
+        add(buildFooter(), BorderLayout.SOUTH);
 
-        JButton refreshBtn = UITheme.secondaryButton("Refresh");
-        JButton confirmBtn = UITheme.primaryButton("Confirm");
-        JButton cancelBtn = UITheme.dangerButton("Cancel");
-
-        actions.add(refreshBtn);
-        actions.add(confirmBtn);
-        actions.add(cancelBtn);
-
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(30);
-
-        add(actions, BorderLayout.NORTH);
-        add(UITheme.scroll(table), BorderLayout.CENTER);
-
-        refreshBtn.addActionListener(ignored -> reload());
-        confirmBtn.addActionListener(ignored -> updateStatus("confirmed"));
-        cancelBtn.addActionListener(ignored -> cancelBooking());
-
-        reload();
+        loadBookingsData();
     }
 
-    public void reload() {
+    // ── Header ────────────────────────────────────────────────────────
+    private JPanel buildHeader() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(UIConstants.THEME_WHITE_BG);
+        header.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+
+        JLabel titleLbl = new JLabel("Pending Bookings");
+        titleLbl.setFont(UIConstants.FONT_TITLE);
+        titleLbl.setForeground(UIConstants.THEME_NAVY);
+
+        JPanel controls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        controls.setBackground(UIConstants.THEME_WHITE_BG);
+
+        filterField = new JTextField(15);
+        filterField.setText("Filter bookings...");
+        filterField.setFont(UIConstants.FONT_BODY);
+        filterField.setBackground(new Color(250, 250, 250));
+        filterField.setForeground(new Color(130, 130, 130));
+        filterField.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        filterField.setPreferredSize(new Dimension(200, 36));
+
+        filterField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (filterField.getText().equals("Filter bookings...")) {
+                    filterField.setText("");
+                    filterField.setForeground(UIConstants.THEME_DARK_FONT);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (filterField.getText().isEmpty()) {
+                    filterField.setText("Filter bookings...");
+                    filterField.setForeground(new Color(130, 130, 130));
+                }
+            }
+        });
+
+        controls.add(filterField);
+        header.add(titleLbl, BorderLayout.WEST);
+        header.add(controls, BorderLayout.EAST);
+        return header;
+    }
+
+    // ── Content ───────────────────────────────────────────────────────
+    private JPanel buildContent() {
+        JPanel content = new JPanel(new BorderLayout());
+        content.setBackground(UIConstants.THEME_WHITE_BG);
+
+        String[] columns = { "Booking ID", "Guest Name", "Room Type", "Check-in", "Check-out", "Status", "Actions" };
+        tableModel = new DefaultTableModel(new Object[][] {}, columns) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 6; // Only Actions column is editable (for button clicks)
+            }
+        };
+
+        bookingsTable = new JTable(tableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                if (column != 6) {
+                    c.setBackground(UIConstants.THEME_WHITE_BG);
+                    c.setForeground(UIConstants.THEME_DARK_FONT);
+                    if (isCellSelected(row, column)) {
+                        c.setBackground(new Color(220, 230, 255));
+                    }
+                }
+                return c;
+            }
+        };
+
+        bookingsTable.setFont(UIConstants.FONT_BODY);
+        bookingsTable.setRowHeight(44);
+        bookingsTable.setBackground(UIConstants.THEME_WHITE_BG);
+        bookingsTable.setForeground(UIConstants.THEME_DARK_FONT);
+        bookingsTable.setGridColor(new Color(200, 200, 200));
+        bookingsTable.setSelectionBackground(new Color(220, 230, 255));
+        bookingsTable.setSelectionForeground(UIConstants.THEME_DARK_FONT);
+
+        JTableHeader header = bookingsTable.getTableHeader();
+        header.setBackground(UIConstants.THEME_WHITE_BG);
+        header.setForeground(UIConstants.THEME_NAVY);
+        header.setFont(UIConstants.FONT_SUBHEADER);
+        header.setPreferredSize(new Dimension(0, 40));
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)));
+
+        // Wire both renderer AND editor to the Actions column
+        TableColumn actionsCol = bookingsTable.getColumn("Actions");
+        actionsCol.setCellRenderer(new ActionCellRenderer());
+        actionsCol.setCellEditor(new ActionCellEditor());
+        actionsCol.setPreferredWidth(150);
+        actionsCol.setWidth(150);
+
+        bookingsTable.getColumn("Booking ID").setPreferredWidth(80);
+        bookingsTable.getColumn("Guest Name").setPreferredWidth(120);
+        bookingsTable.getColumn("Room Type").setPreferredWidth(100);
+        bookingsTable.getColumn("Check-in").setPreferredWidth(90);
+        bookingsTable.getColumn("Check-out").setPreferredWidth(90);
+        bookingsTable.getColumn("Status").setPreferredWidth(80);
+
+        JScrollPane scrollPane = new JScrollPane(bookingsTable);
+        scrollPane.setBackground(UIConstants.THEME_WHITE_BG);
+        scrollPane.getViewport().setBackground(UIConstants.THEME_WHITE_BG);
+        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+
+        content.add(scrollPane, BorderLayout.CENTER);
+        return content;
+    }
+
+    // ── Footer ────────────────────────────────────────────────────────
+    private JPanel buildFooter() {
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setBackground(UIConstants.THEME_WHITE_BG);
+        footer.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
+
+        pageInfoLabel = new JLabel("Showing 1-10 of pending bookings");
+        pageInfoLabel.setFont(UIConstants.FONT_SMALL);
+        pageInfoLabel.setForeground(new Color(130, 130, 130));
+
+        JPanel paginationButtons = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+        paginationButtons.setBackground(UIConstants.THEME_WHITE_BG);
+
+        JButton prevBtn = createPaginationButtonWithIcon("src/hotel/images/resources/backarrowicon.png",
+                e -> previousPage());
+        JButton pageBtn1 = createPaginationButton("1", e -> goToPage(0));
+        JButton pageBtn2 = createPaginationButton("2", e -> goToPage(1));
+        JButton pageBtn3 = createPaginationButton("3", e -> goToPage(2));
+        JButton nextBtn = createPaginationButtonWithIcon("src/hotel/images/resources/nextarrowicon.png",
+                e -> nextPage());
+
+        paginationButtons.add(prevBtn);
+        paginationButtons.add(pageBtn1);
+        paginationButtons.add(pageBtn2);
+        paginationButtons.add(pageBtn3);
+        paginationButtons.add(nextBtn);
+
+        footer.add(pageInfoLabel, BorderLayout.WEST);
+        footer.add(paginationButtons, BorderLayout.EAST);
+        return footer;
+    }
+
+    private JButton createPaginationButtonWithIcon(String iconPath, ActionListener action) {
+        ImageIcon rawIcon = new ImageIcon(iconPath);
+        BufferedImage scaledImg = new BufferedImage(20, 20, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = scaledImg.createGraphics();
+        g2d.drawImage(rawIcon.getImage(), 0, 0, 20, 20, null);
+        g2d.dispose();
+
+        JButton btn = new JButton(new ImageIcon(scaledImg));
+        btn.setBackground(new Color(245, 245, 245));
+        btn.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        btn.setFocusPainted(false);
+        btn.setPreferredSize(new Dimension(36, 30));
+        btn.addActionListener(action);
+        return btn;
+    }
+
+    private JButton createPaginationButton(String text, ActionListener action) {
+        JButton btn = new JButton(text);
+        btn.setFont(UIConstants.FONT_SMALL);
+        btn.setBackground(new Color(245, 245, 245));
+        btn.setForeground(new Color(80, 80, 80));
+        btn.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        btn.setFocusPainted(false);
+        btn.setPreferredSize(new Dimension(36, 30));
+        btn.addActionListener(action);
+        return btn;
+    }
+
+    // ── Load data ─────────────────────────────────────────────────────
+    private void loadBookingsData() {
         try {
+            List<Booking> bookings = bookingService.getAllBookings();
             tableModel.setRowCount(0);
 
-            List<Booking> bookings = bookingDAO.getByStatus("pending");
-
             for (Booking booking : bookings) {
-                tableModel.addRow(new Object[]{
+                // Only show pending bookings
+                if (!"pending".equalsIgnoreCase(booking.getStatus()))
+                    continue;
+                String customerName = "N/A";
+                String roomType = "N/A";
+
+                try {
+                    Customer customer = customerDAO.getById(booking.getCustomerId());
+                    if (customer != null)
+                        customerName = customer.getName();
+                } catch (SQLException e) {
+                    /* keep N/A */ }
+
+                try {
+                    Room room = roomDAO.getById(booking.getRoomId());
+                    if (room != null)
+                        roomType = room.getType();
+                } catch (SQLException e) {
+                    /* keep N/A */ }
+
+                tableModel.addRow(new Object[] {
                         booking.getId(),
-                        booking.getCustomerId(),
-                        booking.getRoomId(),
-                        booking.getCheckInDate(),
-                        booking.getCheckOutDate(),
-                        booking.getTotalPrice(),
-                        booking.getStatus()
+                        customerName,
+                        roomType,
+                        booking.getCheckInDate() != null ? booking.getCheckInDate() : "N/A",
+                        booking.getCheckOutDate() != null ? booking.getCheckOutDate() : "N/A",
+                        booking.getStatus() != null ? booking.getStatus() : "pending",
+                        "ACTIONS"
                 });
             }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Failed to load pending bookings: " + ex.getMessage(),
+            updatePageInfo();
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error loading bookings: " + e.getMessage());
+        }
+    }
+
+    private void updatePageInfo() {
+        int total = tableModel.getRowCount();
+        int start = currentPage * pageSize + 1;
+        int end = Math.min((currentPage + 1) * pageSize, total);
+        pageInfoLabel.setText(String.format("Showing %d-%d of %d bookings", start, end, total));
+    }
+
+    private void previousPage() {
+        if (currentPage > 0) {
+            currentPage--;
+            updatePageInfo();
+        }
+    }
+
+    private void nextPage() {
+        int totalPages = (tableModel.getRowCount() + pageSize - 1) / pageSize;
+        if (currentPage < totalPages - 1) {
+            currentPage++;
+            updatePageInfo();
+        }
+    }
+
+    private void goToPage(int page) {
+        currentPage = page;
+        updatePageInfo();
+    }
+
+    // ── Approve / Reject logic ────────────────────────────────────────
+    private void handleApprove(int row) {
+        int bookingId = (int) tableModel.getValueAt(row, 0);
+        boolean success = bookingService.confirmBooking(bookingId);
+        if (success) {
+            tableModel.removeRow(row);
+            updatePageInfo();
+            JOptionPane.showMessageDialog(this,
+                    "Booking #" + bookingId + " has been confirmed.",
+                    "Approved", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Could not confirm booking #" + bookingId + ".",
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void updateStatus(String status) {
-        int row = table.getSelectedRow();
-
-        if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a booking first.");
-            return;
-        }
-
-        int id = (int) tableModel.getValueAt(row, 0);
-
-        try {
-            Booking booking = bookingDAO.getById(id);
-
-            if (booking == null) {
-                JOptionPane.showMessageDialog(this, "Booking not found.");
-                reload();
-                return;
-            }
-
-            booking.setStatus(status);
-            bookingDAO.update(booking);
-
-            reload();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Failed to update booking: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void cancelBooking() {
-        int row = table.getSelectedRow();
-
-        if (row < 0) {
-            JOptionPane.showMessageDialog(this, "Please select a booking first.");
-            return;
-        }
-
+    private void handleReject(int row) {
+        int bookingId = (int) tableModel.getValueAt(row, 0);
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Cancel this booking?",
-                "Confirm Cancel",
-                JOptionPane.YES_NO_OPTION);
+                "Cancel booking #" + bookingId + "?",
+                "Confirm Rejection", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            boolean success = bookingService.cancelBooking(bookingId);
+            if (success) {
+                tableModel.removeRow(row);
+                updatePageInfo();
+                JOptionPane.showMessageDialog(this,
+                        "Booking #" + bookingId + " has been cancelled.",
+                        "Rejected", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Could not cancel booking #" + bookingId + ".",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
 
-        if (confirm != JOptionPane.YES_OPTION) {
-            return;
+    // ── Renderer ──────────────────────────────────────────────────────
+    private class ActionCellRenderer extends JPanel implements TableCellRenderer {
+        private final JButton approveBtn = makeBtn("Approve", UIConstants.ACCENT_GREEN);
+        private final JButton rejectBtn = makeBtn("Reject", UIConstants.ACCENT_RED);
+
+        ActionCellRenderer() {
+            setLayout(new FlowLayout(FlowLayout.CENTER, 6, 0));
+            setOpaque(true);
+            add(approveBtn);
+            add(rejectBtn);
         }
 
-        int id = (int) tableModel.getValueAt(row, 0);
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            setBackground(isSelected ? new Color(220, 230, 255) : UIConstants.THEME_WHITE_BG);
+            return this;
+        }
 
-        try {
-            Booking booking = bookingDAO.getById(id);
+        private JButton makeBtn(String text, Color bg) {
+            JButton btn = new JButton(text);
+            btn.setFont(UIConstants.FONT_SMALL);
+            btn.setBackground(bg);
+            btn.setForeground(Color.WHITE);
+            btn.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
+            btn.setFocusPainted(false);
+            return btn;
+        }
+    }
 
-            if (booking == null) {
-                JOptionPane.showMessageDialog(this, "Booking not found.");
-                reload();
-                return;
-            }
+    // ── Editor (handles actual clicks) ───────────────────────────────
+    private class ActionCellEditor extends AbstractCellEditor implements TableCellEditor {
+        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
+        private final JButton approveBtn = makeBtn("Approve", UIConstants.ACCENT_GREEN);
+        private final JButton rejectBtn = makeBtn("Reject", UIConstants.ACCENT_RED);
+        private int currentRow;
 
-            booking.setStatus("cancelled");
-            bookingDAO.update(booking);
+        ActionCellEditor() {
+            panel.setOpaque(true);
+            panel.add(approveBtn);
+            panel.add(rejectBtn);
 
-            Room room = roomDAO.getById(booking.getRoomId());
+            approveBtn.addActionListener(e -> {
+                fireEditingStopped();
+                handleApprove(currentRow);
+            });
 
-            if (room != null) {
-                room.setAvailable(true);
-                roomDAO.update(room);
-            }
+            rejectBtn.addActionListener(e -> {
+                fireEditingStopped();
+                handleReject(currentRow);
+            });
+        }
 
-            reload();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Failed to cancel booking: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                boolean isSelected, int row, int column) {
+            currentRow = row;
+            panel.setBackground(isSelected ? new Color(220, 230, 255) : UIConstants.THEME_WHITE_BG);
+            return panel;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return "ACTIONS";
+        }
+
+        @Override
+        public boolean isCellEditable(EventObject e) {
+            return true;
+        }
+
+        private JButton makeBtn(String text, Color bg) {
+            JButton btn = new JButton(text);
+            btn.setFont(UIConstants.FONT_SMALL);
+            btn.setBackground(bg);
+            btn.setForeground(Color.WHITE);
+            btn.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
+            btn.setFocusPainted(false);
+            return btn;
         }
     }
 }

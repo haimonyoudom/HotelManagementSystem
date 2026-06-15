@@ -19,7 +19,6 @@ import hotel.util.DateUtil;
 import hotel.util.PasswordHasher;
 
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -49,8 +48,12 @@ public class Main {
                 int choice = readInt("Choose: ");
                 try {
                     switch (choice) {
-                        case 1: handleLogin(); break;
-                        case 2: handleRegister(); break;
+                        case 1:
+                            handleLogin();
+                            break;
+                        case 2:
+                            handleRegister();
+                            break;
                         case 0:
                             running = false;
                             break;
@@ -65,18 +68,29 @@ public class Main {
                 int choice = readInt("Choose: ");
                 try {
                     switch (choice) {
-                        case 1: roomMenu(); break;
-                        case 2: bookingMenu(); break;
-                        case 3: paymentMenu(); break;
-                        case 4: customerMenu(); break;
+                        case 1:
+                            roomMenu();
+                            break;
+                        case 2:
+                            bookingMenu();
+                            break;
+                        case 3:
+                            paymentMenu();
+                            break;
+                        case 4:
+                            customerMenu();
+                            break;
                         case 5:
-                            if (isAdmin()) staffMenu();
+                            if (isAdmin())
+                                staffMenu();
                             break;
                         case 6:
-                            if (isAdmin()) userMenu();
+                            if (isAdmin())
+                                userMenu();
                             break;
                         case 7:
-                            if (isAdmin()) reportMenu();
+                            if (isAdmin())
+                                reportMenu();
                             break;
                         case 8:
                             authService.logout();
@@ -162,7 +176,8 @@ public class Main {
 
         String role = (type == 2) ? "staff" : "customer";
 
-        // Create the user account (role is always customer or staff — admin assigns admin manually)
+        // Create the user account (role is always customer or staff — admin assigns
+        // admin manually)
         User newUser = new User(0, username, PasswordHasher.hash(password), role, DateUtil.today());
         userDAO.add(newUser);
 
@@ -170,9 +185,9 @@ public class Main {
         if (type == 1) {
             // Customer profile
             System.out.println("\nFill in your customer profile:");
-            String name    = readLine("Full Name: ");
-            String email   = readLine("Email: ");
-            String phone   = readLine("Phone: ");
+            String name = readLine("Full Name: ");
+            String email = readLine("Email: ");
+            String phone = readLine("Phone: ");
             String address = readLine("Address: ");
 
             Customer customer = new Customer(0, name, email, phone, address);
@@ -182,9 +197,9 @@ public class Main {
         } else {
             // Staff profile
             System.out.println("\nFill in your staff profile:");
-            String name     = readLine("Full Name: ");
+            String name = readLine("Full Name: ");
             String position = readLine("Position: ");
-            double salary   = readDouble("Salary: ");
+            double salary = readDouble("Salary: ");
 
             Staff staff = new Staff(0, name, position, salary, newUser.getId());
             staffDAO.add(staff);
@@ -235,18 +250,22 @@ public class Main {
                 roomService.searchRooms(readLine("Type: ")).forEach(System.out::println);
                 break;
             case 4:
-                if (!isAdmin()) break;
+                if (!isAdmin())
+                    break;
                 boolean added = roomService.addRoom(
                         readLine("Room number: "),
                         readLine("Type: "),
-                        readDouble("Price per night: ")
-                );
+                        readDouble("Price per night: "));
                 System.out.println(added ? "Room added." : "Failed to add room.");
                 break;
             case 5:
-                if (!isAdmin()) break;
+                if (!isAdmin())
+                    break;
                 Room existing = findRoomById(readInt("Room ID: "));
-                if (existing == null) { System.out.println("Room not found."); break; }
+                if (existing == null) {
+                    System.out.println("Room not found.");
+                    break;
+                }
                 existing.setRoomNumber(readLine("New room number: "));
                 existing.setType(readLine("New type: "));
                 existing.setPricePerNight(readDouble("New price: "));
@@ -254,7 +273,8 @@ public class Main {
                 System.out.println(roomService.updateRoom(existing) ? "Room updated." : "Update failed.");
                 break;
             case 6:
-                if (!isAdmin()) break;
+                if (!isAdmin())
+                    break;
                 System.out.println(roomService.deleteRoom(readInt("Room ID: ")) ? "Room deleted." : "Delete failed.");
                 break;
             default:
@@ -279,8 +299,7 @@ public class Main {
                         readInt("Customer ID: "),
                         readInt("Room ID: "),
                         readLine("Check-in  (YYYY-MM-DD): "),
-                        readLine("Check-out (YYYY-MM-DD): ")
-                );
+                        readLine("Check-out (YYYY-MM-DD): "));
                 System.out.println(booking == null ? "Could not create booking." : "Booking created:\n" + booking);
                 break;
             case 2:
@@ -290,11 +309,16 @@ public class Main {
                 bookingService.getBookingsForCustomer(readInt("Customer ID: ")).forEach(System.out::println);
                 break;
             case 4:
-                if (!isAdminOrStaff()) { System.out.println("Access denied."); break; }
-                System.out.println(bookingService.confirmBooking(readInt("Booking ID: ")) ? "Booking confirmed." : "Booking not found.");
+                if (!isAdminOrStaff()) {
+                    System.out.println("Access denied.");
+                    break;
+                }
+                System.out.println(bookingService.confirmBooking(readInt("Booking ID: ")) ? "Booking confirmed."
+                        : "Booking not found.");
                 break;
             case 5:
-                System.out.println(bookingService.cancelBooking(readInt("Booking ID: ")) ? "Booking cancelled." : "Booking not found.");
+                System.out.println(bookingService.cancelBooking(readInt("Booking ID: ")) ? "Booking cancelled."
+                        : "Booking not found.");
                 break;
             default:
                 System.out.println("Invalid option.");
@@ -316,18 +340,24 @@ public class Main {
                 System.out.println(paymentService.processPayment(
                         readInt("Booking ID: "),
                         readDouble("Amount: "),
-                        readLine("Method (cash/card/online): ")
-                ));
+                        readLine("Method (cash/card/online): ")));
                 break;
             case 2:
-                if (!isAdmin()) { System.out.println("Access denied."); break; }
-                System.out.println(paymentService.refundPayment(readInt("Payment ID: ")) ? "Refunded." : "Payment not found.");
+                if (!isAdmin()) {
+                    System.out.println("Access denied.");
+                    break;
+                }
+                System.out.println(
+                        paymentService.refundPayment(readInt("Payment ID: ")) ? "Refunded." : "Payment not found.");
                 break;
             case 3:
                 paymentService.getPaymentsForBooking(readInt("Booking ID: ")).forEach(System.out::println);
                 break;
             case 4:
-                if (!isAdmin()) { System.out.println("Access denied."); break; }
+                if (!isAdmin()) {
+                    System.out.println("Access denied.");
+                    break;
+                }
                 System.out.println("Total revenue: " + paymentService.getTotalRevenue());
                 break;
             default:
@@ -353,19 +383,24 @@ public class Main {
                 customerDAO.searchByName(readLine("Keyword: ")).forEach(System.out::println);
                 break;
             case 3:
-                if (!isAdminOrStaff()) { System.out.println("Access denied."); break; }
+                if (!isAdminOrStaff()) {
+                    System.out.println("Access denied.");
+                    break;
+                }
                 Customer customer = new Customer(
                         0,
                         readLine("Name: "),
                         readLine("Email: "),
                         readLine("Phone: "),
-                        readLine("Address: ")
-                );
+                        readLine("Address: "));
                 customerDAO.add(customer);
                 System.out.println("Customer added with id=" + customer.getId());
                 break;
             case 4:
-                if (!isAdmin()) { System.out.println("Access denied."); break; }
+                if (!isAdmin()) {
+                    System.out.println("Access denied.");
+                    break;
+                }
                 customerDAO.delete(readInt("Customer ID: "));
                 System.out.println("Customer deleted.");
                 break;
@@ -415,7 +450,10 @@ public class Main {
             case 2:
                 String target = readLine("Username to promote: ");
                 User u = userDAO.getByUsername(target);
-                if (u == null) { System.out.println("User not found."); break; }
+                if (u == null) {
+                    System.out.println("User not found.");
+                    break;
+                }
                 u.setRole("admin");
                 userDAO.update(u);
                 System.out.println(target + " is now an admin.");
@@ -453,10 +491,16 @@ public class Main {
             case 4:
                 System.out.println("1. Occupancy  2. Revenue  3. Booking summary");
                 int rt = readInt("Report type: ");
-                if (rt == 1)      content = reportService.generateOccupancyReport();
-                else if (rt == 2) content = reportService.generateRevenueReport();
-                else if (rt == 3) content = reportService.generateBookingSummary();
-                else { System.out.println("Invalid."); return; }
+                if (rt == 1)
+                    content = reportService.generateOccupancyReport();
+                else if (rt == 2)
+                    content = reportService.generateRevenueReport();
+                else if (rt == 3)
+                    content = reportService.generateBookingSummary();
+                else {
+                    System.out.println("Invalid.");
+                    return;
+                }
                 String filename = readLine("Filename: ");
                 reportService.exportReport(content, filename);
                 System.out.println("Report exported.");
@@ -468,53 +512,72 @@ public class Main {
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
+    private static void ensureDefaultStaff() {
+        try {
+            if (userDAO.getByUsername("staff1") == null) {
+                User staffUser = new User(
+                        0,
+                        "staff1",
+                        PasswordHasher.hash("staff123"),
+                        "staff",
+                        DateUtil.today());
+                userDAO.add(staffUser);
+
+                Staff staff = new Staff(0, "Staff One", "Receptionist", 0.0, staffUser.getId());
+                staffDAO.add(staff);
+
+                System.out.println("Default staff created -> staff1 / staff123");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to create default staff", e);
+        }
+    }
+
     private static void ensureDefaultAdmin() {
 
-    createAdmin("admin", "admin123");
-    createAdmin("admin2", "admin123");
-    createAdmin("admin3", "admin123");
-}
-
-private static void createAdmin(String username, String password) {
-
-    try {
-
-        if (userDAO.getByUsername(username) == null) {
-
-            User admin = new User(
-                    0,
-                    username,
-                    PasswordHasher.hash(password),
-                    "admin",
-                    DateUtil.today()
-            );
-
-            userDAO.add(admin);
-
-            System.out.println(
-                    "Default admin created -> " +
-                    username + " / " + password
-            );
-        }
-
-    } catch (SQLException e) {
-
-        throw new RuntimeException(
-                "Failed to create admin: " + username,
-                e
-        );
+        createAdmin("admin", "admin123");
+        createAdmin("admin2", "admin123");
+        createAdmin("admin3", "admin123");
+        ensureDefaultStaff();
     }
-}
+
+    private static void createAdmin(String username, String password) {
+
+        try {
+
+            if (userDAO.getByUsername(username) == null) {
+
+                User admin = new User(
+                        0,
+                        username,
+                        PasswordHasher.hash(password),
+                        "admin",
+                        DateUtil.today());
+
+                userDAO.add(admin);
+
+                System.out.println(
+                        "Default admin created -> " +
+                                username + " / " + password);
+            }
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Failed to create admin: " + username,
+                    e);
+        }
+    }
 
     private static boolean isAdmin() {
 
-    User u = authService.getCurrentUser();
+        User u = authService.getCurrentUser();
 
-    System.out.println("ROLE = [" + u.getRole() + "]");
+        System.out.println("ROLE = [" + u.getRole() + "]");
 
-    return u != null &&
-           "ADMIN".equalsIgnoreCase(u.getRole().trim());
-}
+        return u != null &&
+                "ADMIN".equalsIgnoreCase(u.getRole().trim());
+    }
 
     private static boolean isAdminOrStaff() {
         User u = authService.getCurrentUser();
@@ -530,23 +593,31 @@ private static void createAdmin(String username, String password) {
 
     private static int readInt(String prompt) {
         while (true) {
-            try { return Integer.parseInt(readLine(prompt)); }
-            catch (NumberFormatException e) { System.out.println("Please enter a valid integer."); }
+            try {
+                return Integer.parseInt(readLine(prompt));
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid integer.");
+            }
         }
     }
 
     private static double readDouble(String prompt) {
         while (true) {
-            try { return Double.parseDouble(readLine(prompt)); }
-            catch (NumberFormatException e) { System.out.println("Please enter a valid number."); }
+            try {
+                return Double.parseDouble(readLine(prompt));
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid number.");
+            }
         }
     }
 
     private static boolean readBoolean(String prompt) {
         while (true) {
             String v = readLine(prompt).trim().toLowerCase();
-            if ("true".equals(v) || "yes".equals(v) || "y".equals(v)) return true;
-            if ("false".equals(v) || "no".equals(v) || "n".equals(v)) return false;
+            if ("true".equals(v) || "yes".equals(v) || "y".equals(v))
+                return true;
+            if ("false".equals(v) || "no".equals(v) || "n".equals(v))
+                return false;
             System.out.println("Enter true/false.");
         }
     }
