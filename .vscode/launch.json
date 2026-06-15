@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run Console App (hotel.main.Main)",
+      "request": "launch",
+      "mainClass": "hotel.main.Main"
+    },
+    {
+      "type": "java",
+      "name": "Run GUI App (CustomerDashboard)",
+      "request": "launch",
+      "mainClass": "hotel.ui.customer.CustomerDashboard"
+    }
+  ]
+}

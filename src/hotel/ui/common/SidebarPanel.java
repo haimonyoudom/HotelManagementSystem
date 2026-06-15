@@ -1,73 +1,89 @@
 package hotel.ui.common;
 
-import javax.swing.*;
 import java.awt.*;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.*;
+
+/*
+ SidebarPanel.java
+ ------------------
+ Reusable sidebar component for all dashboard screens.
+ Handles navigation menu with light-mode styling.
+*/
 
 public class SidebarPanel extends JPanel {
-    private final Map<String, JButton> buttons = new LinkedHashMap<>();
-    private String activeKey;
 
-    public SidebarPanel(String appTitle) {
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setBackground(UITheme.SIDEBAR);
-        setPreferredSize(new Dimension(220, 0));
-        setBorder(BorderFactory.createEmptyBorder(20, 16, 20, 16));
+    // ── Light Mode Palette ─────────────────────────────────────────────────
+    static final Color BG_SIDEBAR    = new Color(245, 245, 245);
+    static final Color NAV_ACTIVE_BG   = new Color(220, 230, 255);
+    static final Color NAV_ACTIVE_TEXT = new Color(37, 99, 235);
+    static final Color NAV_HOVER_BG    = new Color(245, 245, 245);
+    static final Color TXT_PRIMARY   = new Color(20, 20, 20);
+    static final Color BORDER        = new Color(220, 220, 220);
 
-        JLabel title = new JLabel(appTitle);
-        title.setFont(UITheme.HEADER_FONT);
-        title.setForeground(Color.WHITE);
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+    static final Font F_REG   = new Font("Segoe UI", Font.PLAIN, 13);
 
-        add(title);
-        add(Box.createVerticalStrut(24));
+    public static final int SIDEBAR_W = 180;
+    public static final int TOPBAR_H  = 56;
+
+    private String[] items;
+    private String[] screens;
+    private String activeScreen;
+    private Runnable onNavigate;
+
+    public SidebarPanel(String[] items, String[] screens, String activeScreen, Runnable onNavigate) {
+        this.items = items;
+        this.screens = screens;
+        this.activeScreen = activeScreen;
+        this.onNavigate = onNavigate;
+        initUI();
     }
 
-    public void addSection(String sectionTitle) {
-        JLabel label = new JLabel(sectionTitle);
-        label.setFont(UITheme.SMALL_FONT);
-        label.setForeground(new Color(185, 190, 205));
-        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+    private void initUI() {
+        setLayout(null);
+        setBackground(BG_SIDEBAR);
+        setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER));
 
-        add(Box.createVerticalStrut(12));
-        add(label);
-        add(Box.createVerticalStrut(8));
-    }
+        for (int i = 0; i < items.length; i++) {
+            final String screen = screens[i];
+            JButton btn = new JButton(items[i]);
+            btn.setBounds(10, 20 + i * 50, SIDEBAR_W - 20, 40);
+            btn.setFont(F_REG);
+            btn.setBorder(BorderFactory.createEmptyBorder());
+            btn.setFocusPainted(false);
 
-    public void addNavigationButton(String key, String text, Runnable action) {
-        JButton button = UITheme.sidebarButton(text);
-        button.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        button.addActionListener(e -> {
-            setActive(key);
-            action.run();
-        });
-
-        buttons.put(key, button);
-        add(button);
-        add(Box.createVerticalStrut(8));
-
-        if (activeKey == null) {
-            setActive(key);
-        }
-    }
-
-    public void addBottomGlue() {
-        add(Box.createVerticalGlue());
-    }
-
-    public void setActive(String key) {
-        activeKey = key;
-
-        for (Map.Entry<String, JButton> entry : buttons.entrySet()) {
-            JButton button = entry.getValue();
-
-            if (entry.getKey().equals(key)) {
-                button.setBackground(UITheme.SIDEBAR_ACTIVE);
+            if (screen.equals(activeScreen)) {
+                btn.setBackground(NAV_ACTIVE_BG);
+                btn.setForeground(NAV_ACTIVE_TEXT);
             } else {
-                button.setBackground(UITheme.SIDEBAR);
+                btn.setBackground(BG_SIDEBAR);
+                btn.setForeground(TXT_PRIMARY);
             }
+
+            btn.addActionListener(e -> {
+                if (onNavigate != null) onNavigate.run();
+            });
+
+            btn.addMouseListener(new MouseAdapter() {
+                public void mouseEntered(MouseEvent e) {
+                    if (!screen.equals(activeScreen)) {
+                        btn.setBackground(NAV_HOVER_BG);
+                    }
+                }
+                public void mouseExited(MouseEvent e) {
+                    if (!screen.equals(activeScreen)) {
+                        btn.setBackground(BG_SIDEBAR);
+                    }
+                }
+            });
+
+            add(btn);
         }
+    }
+
+    public void setActiveScreen(String screen) {
+        this.activeScreen = screen;
+        repaint();
     }
 }
