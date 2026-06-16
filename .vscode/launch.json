@@ -3,6 +3,27 @@
   "configurations": [
     {
       "type": "java",
+      "name": "AdminDashboardTest",
+      "request": "launch",
+      "mainClass": "hotel.ui.admin.AdminDashboardTest",
+      "projectName": "hotelManagementSystem_c4c46df0"
+    },
+    {
+      "type": "java",
+      "name": "staffmain",
+      "request": "launch",
+      "mainClass": "hotel.test.staffmain",
+      "projectName": "hotelManagementSystem_c4c46df0"
+    },
+    {
+      "type": "java",
+      "name": "GUILauncher",
+      "request": "launch",
+      "mainClass": "hotel.main.GUILauncher",
+      "projectName": "hotelManagementSystem_c4c46df0"
+    },
+    {
+      "type": "java",
       "name": "Run Console App (hotel.main.Main)",
       "request": "launch",
       "mainClass": "hotel.main.Main"

@@ -14,7 +14,7 @@ import hotel.model.Payment;
 import hotel.model.Room;
 import hotel.model.Staff;
 import hotel.model.User;
-import hotel.util.PasswordHasher;
+import hotel.ui.admin.util.PasswordHasher;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;

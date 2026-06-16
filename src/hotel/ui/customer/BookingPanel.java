@@ -1,6 +1,8 @@
 package hotel.ui.customer;
 
 import static hotel.ui.customer.CustomerDashboard.*;
+import hotel.model.Booking;
+import hotel.model.Room;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.SimpleDateFormat;
@@ -9,7 +11,9 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 
@@ -56,23 +60,17 @@ public class BookingPanel {
     private static final Font F_POLICY = new Font("Segoe UI", Font.PLAIN, 12);
     private static final Font F_BOLD = new Font("Segoe UI", Font.BOLD, 13);
 
-    // ── Room data ──────────────────────────────────────────────────────
-    private static final String[][] ROOMS = {
-            { "Standard Twin", "$85/night" },
-            { "Deluxe King", "$120/night" },
-            { "Premier Suite", "$160/night" },
-            { "Family Room", "$210/night" },
-    };
-
     // ── State ──────────────────────────────────────────────────────────
     private static int selectedRoomIndex = 0;
     private static JLabel[] summaryValues = new JLabel[4];
-    private static JButton[] roomBtns = new JButton[ROOMS.length];
+    private static JButton[] roomBtns = new JButton[0];
+    private static List<Room> rooms = new ArrayList<>();
     private static JSpinner checkinField;
     private static JSpinner checkoutField;
 
     // =========================================================================
     public static void build(JPanel panel) {
+        loadRooms(panel);
         panel.setBackground(BG_MAIN);
         panel.add(buildTopbar("BOOKINGS"), BorderLayout.NORTH);
 
@@ -149,24 +147,33 @@ public class BookingPanel {
         // 2×2 grid — each button is 60 px tall; 2 rows + 8 px gap = 128 px
         JLabel[] summVals = new JLabel[4];
 
-        JPanel roomGrid = new JPanel(new GridLayout(2, 2, 10, 8));
+        int rowCount = Math.max(1, (int) Math.ceil(Math.max(rooms.size(), 1) / 2.0));
+        JPanel roomGrid = new JPanel(new GridLayout(rowCount, 2, 10, 8));
         roomGrid.setBackground(C_CARD_BG);
 
-        for (int i = 0; i < ROOMS.length; i++) {
+        roomBtns = new JButton[rooms.size()];
+        for (int i = 0; i < rooms.size(); i++) {
             final int idx = i;
-            JButton btn = makeRoomBtn(ROOMS[i][0], ROOMS[i][1], i == selectedRoomIndex);
+            Room room = rooms.get(i);
+            JButton btn = makeRoomBtn(CustomerData.roomTitle(room), CustomerData.pricePerNight(room), i == selectedRoomIndex);
             roomBtns[i] = btn;
             roomGrid.add(btn);
             btn.addActionListener(e -> {
                 selectedRoomIndex = idx;
-                for (int j = 0; j < ROOMS.length; j++)
+                for (int j = 0; j < rooms.size(); j++)
                     setRoomBtnState(roomBtns[j], j == idx);
                 if (summVals[0] != null) {
-                    summVals[0].setText(ROOMS[idx][0]);
-                    summVals[2].setText(ROOMS[idx][1]);
-                    updateTotal(summVals, ciField, coField, ROOMS[idx][1]);
+                    Room selected = rooms.get(idx);
+                    summVals[0].setText(CustomerData.roomTitle(selected));
+                    summVals[2].setText(CustomerData.pricePerNight(selected));
+                    updateTotal(summVals, ciField, coField, CustomerData.pricePerNight(selected));
                 }
             });
+        }
+        if (rooms.isEmpty()) {
+            JLabel empty = lbl("No available rooms found in database", F_LABEL, TXT_SECONDARY);
+            empty.setHorizontalAlignment(SwingConstants.CENTER);
+            roomGrid.add(empty);
         }
         inner.add(sizeBox(roomGrid, 128));
         inner.add(Box.createVerticalStrut(14));
@@ -194,8 +201,13 @@ public class BookingPanel {
         summBox.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
 
         String[] summLabels = { "Room", "Duration", "Rate", "Total" };
-        String[] summDefaults = { ROOMS[selectedRoomIndex][0], "— nights",
-                ROOMS[selectedRoomIndex][1], "—" };
+        Room initialRoom = getSelectedRoom();
+        String[] summDefaults = {
+                initialRoom != null ? CustomerData.roomTitle(initialRoom) : "No room selected",
+                "- nights",
+                initialRoom != null ? CustomerData.pricePerNight(initialRoom) : "$0/night",
+                "-"
+        };
         for (int i = 0; i < 4; i++) {
             summBox.add(lbl(summLabels[i], F_SUMM, TXT_SECONDARY));
             summVals[i] = lbl(summDefaults[i], F_SUMM, BLUE);
@@ -206,7 +218,12 @@ public class BookingPanel {
         inner.add(Box.createVerticalStrut(14));
 
         // Wire date listeners
-        ChangeListener dl = e -> updateTotal(summVals, ciField, coField, ROOMS[selectedRoomIndex][1]);
+        ChangeListener dl = e -> {
+            Room selected = getSelectedRoom();
+            if (selected != null) {
+                updateTotal(summVals, ciField, coField, CustomerData.pricePerNight(selected));
+            }
+        };
         ciField.addChangeListener(dl);
         coField.addChangeListener(dl);
         checkinField = ciField;
@@ -234,13 +251,18 @@ public class BookingPanel {
         confirmBtn.setBorderPainted(false);
         confirmBtn.setFocusPainted(false);
         confirmBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        confirmBtn.setEnabled(!rooms.isEmpty());
         confirmBtn.addActionListener(e -> {
-            String room = ROOMS[selectedRoomIndex][0];
-            String rate = ROOMS[selectedRoomIndex][1];
+            Room room = getSelectedRoom();
+            if (room == null) {
+                JOptionPane.showMessageDialog(card, "No room is selected.", "Booking Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            String rate = CustomerData.pricePerNight(room);
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
             String ci = sdf.format((Date) ciField.getValue());
             String co = sdf.format((Date) coField.getValue());
-            int baseRate = Integer.parseInt(rate.replace("$", "").replace("/night", ""));
+            int baseRate = Integer.parseInt(rate.replace("$", "").replace(",", "").replace("/night", ""));
             int nights = 1;
             try {
                 long diff = ChronoUnit.DAYS.between(
@@ -250,9 +272,23 @@ public class BookingPanel {
                     nights = (int) diff;
             } catch (Exception ignored) {
             }
-            String ref = "#BK-" + (System.currentTimeMillis() % 100000);
-            PaymentPanel.setBookingDetails(ref, room, ci, co, baseRate * nights);
-            CustomerDashboard.switchTo("payment");
+            try {
+                LocalDate checkIn = toLocalDate((Date) ciField.getValue());
+                LocalDate checkOut = toLocalDate((Date) coField.getValue());
+                if (!checkOut.isAfter(checkIn)) {
+                    JOptionPane.showMessageDialog(card, "Check-out must be after check-in.",
+                            "Booking Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                Booking booking = CustomerData.createBooking(room, checkIn, checkOut, baseRate * nights);
+                PaymentPanel.setBookingDetails(booking.getId(), "#BK-" + booking.getId(),
+                        CustomerData.roomTitle(room), ci, co, baseRate * nights);
+                CustomerDashboard.refreshCustomerScreens();
+                CustomerDashboard.switchTo("payment");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(card, "Could not save booking: " + ex.getMessage(),
+                        "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
         inner.add(sizeBox(confirmBtn, 40));
 
@@ -396,9 +432,12 @@ public class BookingPanel {
         btn.repaint();
     }
 
-    public static void selectBookingRoom(String roomName, String price) {
-        for (int i = 0; i < ROOMS.length; i++)
-            if (ROOMS[i][0].equals(roomName)) {
+    public static void selectBookingRoom(Room room) {
+        if (room == null) {
+            return;
+        }
+        for (int i = 0; i < rooms.size(); i++)
+            if (rooms.get(i).getId() == room.getId()) {
                 selectedRoomIndex = i;
                 break;
             }
@@ -406,9 +445,20 @@ public class BookingPanel {
             if (roomBtns[i] != null)
                 setRoomBtnState(roomBtns[i], i == selectedRoomIndex);
         if (summaryValues[0] != null) {
+            String roomName = CustomerData.roomTitle(room);
+            String price = CustomerData.pricePerNight(room);
             summaryValues[0].setText(roomName);
             summaryValues[2].setText(price);
             updateTotal(summaryValues, checkinField, checkoutField, price);
+        }
+    }
+
+    public static void selectBookingRoom(String roomName, String price) {
+        for (Room room : rooms) {
+            if (CustomerData.roomTitle(room).equals(roomName)) {
+                selectBookingRoom(room);
+                return;
+            }
         }
     }
 
@@ -417,11 +467,11 @@ public class BookingPanel {
             long n = ChronoUnit.DAYS.between(toLocalDate((Date) ci.getValue()),
                     toLocalDate((Date) co.getValue()));
             if (n <= 0) {
-                sv[1].setText("— nights");
-                sv[3].setText("—");
+                sv[1].setText("- nights");
+                sv[3].setText("-");
                 return;
             }
-            int rate = Integer.parseInt(priceStr.replace("$", "").replace("/night", ""));
+            int rate = Integer.parseInt(priceStr.replace("$", "").replace(",", "").replace("/night", ""));
             sv[1].setText(n + " nights");
             sv[3].setText("$" + (n * rate));
         } catch (Exception ignored) {
@@ -430,6 +480,25 @@ public class BookingPanel {
 
     private static LocalDate toLocalDate(Date d) {
         return Instant.ofEpochMilli(d.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
+    }
+
+    private static Room getSelectedRoom() {
+        if (rooms.isEmpty() || selectedRoomIndex < 0 || selectedRoomIndex >= rooms.size()) {
+            return null;
+        }
+        return rooms.get(selectedRoomIndex);
+    }
+
+    private static void loadRooms(Component parent) {
+        try {
+            rooms = CustomerData.getAvailableRooms();
+            selectedRoomIndex = rooms.isEmpty() ? -1 : 0;
+        } catch (Exception e) {
+            rooms = new ArrayList<>();
+            selectedRoomIndex = -1;
+            JOptionPane.showMessageDialog(parent, "Could not load rooms from database: " + e.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     static JSpinner makeDateSpinner() {

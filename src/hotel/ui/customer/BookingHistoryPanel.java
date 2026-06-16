@@ -55,17 +55,6 @@ public class BookingHistoryPanel {
     private static final Font F_PRICE = new Font("Segoe UI", Font.BOLD, 13);
     private static final Font F_BADGE = new Font("Segoe UI", Font.BOLD, 11);
 
-    // ── Booking data ───────────────────────────────────────────────────
-    // { roomName, roomNum, checkIn, checkOut, price, status }
-    private static final Object[][] ALL_BOOKINGS = {
-            { "Deluxe King", "Room 304", "Apr 28, 2026", "May 2, 2026", "$596", "Checked In" },
-            { "Standard Twin", "Room 112", "May 10, 2026", "May 13, 2026", "$267", "Pending" },
-            { "Suite Ocean View", "Room 501", "Jun 1, 2026", "Jun 7, 2026", "$1,734", "Approved" },
-            { "Family Room", "Room 210", "Mar 15, 2026", "Mar 17, 2026", "$398", "Checked Out" },
-            { "Standard Queen", "Room 108", "Feb 20, 2026", "Feb 22, 2026", "$198", "Checked Out" },
-            { "Deluxe Double", "Room 215", "Jan 5, 2026", "Jan 8, 2026", "$507", "Cancelled" },
-    };
-
     private static final String[] FILTERS = {
             "All", "Pending", "Approved", "Checked In", "Checked Out", "Cancelled"
     };
@@ -74,6 +63,7 @@ public class BookingHistoryPanel {
     private static String activeFilter = "All";
     private static JPanel tableBody;
     private static FilterChip[] chips;
+    private static List<CustomerData.BookingRow> bookingRows = new ArrayList<>();
 
     // =========================================================================
     // Entry point — called from CustomerDashboard
@@ -166,6 +156,12 @@ public class BookingHistoryPanel {
         scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         tableCard.add(scroll, BorderLayout.CENTER);
 
+        loadRows(panel);
+        renderRows();
+    }
+
+    public static void refresh() {
+        loadRows(tableBody);
         renderRows();
     }
 
@@ -224,9 +220,9 @@ public class BookingHistoryPanel {
             return;
         tableBody.removeAll();
 
-        List<Object[]> visible = new ArrayList<>();
-        for (Object[] b : ALL_BOOKINGS) {
-            String status = (String) b[5];
+        List<CustomerData.BookingRow> visible = new ArrayList<>();
+        for (CustomerData.BookingRow b : bookingRows) {
+            String status = CustomerData.normalizeStatus(b.booking.getStatus());
             if (activeFilter.equals("All") || status.equals(activeFilter))
                 visible.add(b);
         }
@@ -249,13 +245,13 @@ public class BookingHistoryPanel {
         tableBody.repaint();
     }
 
-    private static JPanel buildRow(Object[] b, boolean alt) {
-        String roomName = (String) b[0];
-        String roomNum = (String) b[1];
-        String checkIn = (String) b[2];
-        String checkOut = (String) b[3];
-        String price = (String) b[4];
-        String status = (String) b[5];
+    private static JPanel buildRow(CustomerData.BookingRow b, boolean alt) {
+        String roomName = CustomerData.roomTitle(b.room);
+        String roomNum = b.room != null ? "Room " + b.room.getRoomNumber() : "Room unavailable";
+        String checkIn = CustomerData.formatDate(b.booking.getCheckInDate());
+        String checkOut = CustomerData.formatDate(b.booking.getCheckOutDate());
+        String price = CustomerData.money(b.booking.getTotalPrice());
+        String status = CustomerData.normalizeStatus(b.booking.getStatus());
 
         // Row panel: GridBagLayout with same column weights as header
         JPanel row = new JPanel(new GridBagLayout()) {
@@ -374,6 +370,18 @@ public class BookingHistoryPanel {
         l.setFont(font);
         l.setForeground(color);
         return l;
+    }
+
+    private static void loadRows(Component parent) {
+        try {
+            bookingRows = CustomerData.getBookingRows();
+        } catch (Exception e) {
+            bookingRows = new ArrayList<>();
+            if (parent != null) {
+                JOptionPane.showMessageDialog(parent, "Could not load booking history: " + e.getMessage(),
+                        "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     // ── Inner: FilterChip ─────────────────────────────────────────────

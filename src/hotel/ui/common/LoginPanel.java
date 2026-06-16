@@ -1,10 +1,10 @@
 package hotel.ui.common;
 
+import hotel.util.*;
 import hotel.ui.staff.util.AuthLogic;
 import hotel.ui.staff.util.LoginUIUtils;
 import hotel.ui.staff.util.UIConstants;
 import hotel.ui.staff.util.UIHelper;
-import hotel.util.*;
 
 import javax.swing.*;
 import javax.swing.border.*;
