@@ -2,8 +2,8 @@ package hotel.ui.customer;
 
 import hotel.dao.PaymentDAO;
 import hotel.model.Payment;
-import hotel.ui.common.UITheme;
 import hotel.util.DateUtil;
+import hotel.ui.common.UITheme;
 
 import javax.swing.*;
 import java.awt.*;

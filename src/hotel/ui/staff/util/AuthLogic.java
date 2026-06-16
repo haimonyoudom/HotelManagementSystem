@@ -6,9 +6,9 @@ import hotel.dao.UserDAO;
 import hotel.dao.CustomerDAO;
 import hotel.model.User;
 import hotel.model.Customer;
-import hotel.util.PasswordHasher;
 import hotel.ui.staff.StaffDashboard;
 import hotel.ui.admin.AdminDashboard;
+import hotel.ui.admin.util.PasswordHasher;
 import hotel.ui.customer.CustomerDashboard;
 
 import javax.swing.*;

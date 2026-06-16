@@ -5,15 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fdb0d8cf-a49a-4bb0-87a7-ca2bc9d53193" name="Changes" comment="sample gui">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.vscode/launch.json" beforeDir="false" afterPath="$PROJECT_DIR$/.vscode/launch.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/hotel/test/staffmain.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/hotel/test/staffmain.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hotel/ui/admin/AdminDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/hotel/ui/admin/AdminDashboard.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/hotel/ui/common/LoginFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/hotel/ui/common/LoginFrame.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hotel/ui/customer/BookingHistoryPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/hotel/ui/customer/BookingHistoryPanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hotel/ui/customer/BookingPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/hotel/ui/customer/BookingPanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hotel/ui/customer/BrowseRoomsPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/hotel/ui/customer/BrowseRoomsPanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hotel/ui/customer/CustomerDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/hotel/ui/customer/CustomerDashboard.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hotel/ui/customer/PaymentPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/hotel/ui/customer/PaymentPanel.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -271,7 +266,7 @@
       <workItem from="1781220068471" duration="914000" />
       <workItem from="1781479917975" duration="2483000" />
       <workItem from="1781487610145" duration="1802000" />
-      <workItem from="1781489435629" duration="1531000" />
+      <workItem from="1781489435629" duration="2202000" />
     </task>
     <task id="LOCAL-00001" summary="update gitignore">
       <option name="closed" value="true" />
