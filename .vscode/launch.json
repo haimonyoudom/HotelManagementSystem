@@ -3,6 +3,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "MainGUI",
+      "request": "launch",
+      "mainClass": "hotel.main.MainGUI",
+      "projectName": "hotelManagementSystem_c4c46df0"
+    },
+    {
+      "type": "java",
       "name": "AdminDashboardTest",
       "request": "launch",
       "mainClass": "hotel.ui.admin.AdminDashboardTest",
