@@ -19,24 +19,43 @@ public class AuthService extends BaseService {
 		this.userDAO = userDAO;
 	}
 
+	// public boolean login(String username, String password) {
+	// 	try {
+	// 		User user = userDAO.getByUsername(username);
+	// 		if (user == null) {
+	// 			return false;
+	// 		}
+	// 		boolean matched = PasswordHasher.verify(password, user.getPasswordHash());
+	// 		if (matched) {
+	// 			loggedInUser = user;
+	// 			logAction("User logged in: " + username);
+	// 			return true;
+	// 		}
+	// 		return false;
+	// 	} catch (SQLException e) {
+	// 		throw new RuntimeException("Failed to login user", e);
+	// 	}
+	// }
 	public boolean login(String username, String password) {
-		try {
-			User user = userDAO.getByUsername(username);
-			if (user == null) {
-				return false;
-			}
-			boolean matched = PasswordHasher.verify(password, user.getPasswordHash());
-			if (matched) {
-				loggedInUser = user;
-				logAction("User logged in: " + username);
-				return true;
-			}
-			return false;
-		} catch (SQLException e) {
-			throw new RuntimeException("Failed to login user", e);
-		}
-	}
-
+    try {
+        User user = userDAO.getByUsername(username);
+        if (user == null) {
+            System.out.println("DEBUG: user not found");
+            return false;
+        }
+        System.out.println("DEBUG: stored hash = " + user.getPasswordHash());
+        System.out.println("DEBUG: input hash  = " + PasswordHasher.hash(password));
+        boolean matched = PasswordHasher.verify(password, user.getPasswordHash());
+        System.out.println("DEBUG: matched = " + matched);
+        if (matched) {
+            loggedInUser = user;
+            return true;
+        }
+        return false;
+    } catch (SQLException e) {
+        throw new RuntimeException("Failed to login user", e);
+    }
+}
 	public void logout() {
 		if (loggedInUser != null) {
 			logAction("User logged out: " + loggedInUser.getUsername());

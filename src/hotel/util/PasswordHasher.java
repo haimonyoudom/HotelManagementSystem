@@ -2,6 +2,7 @@ package hotel.util;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 
 public class PasswordHasher {
 
@@ -10,7 +11,7 @@ public class PasswordHasher {
     public static String hash(String plainPassword) {
         try {
             MessageDigest digest = MessageDigest.getInstance(ALGORITHM);
-            byte[] hashBytes = digest.digest(plainPassword.getBytes());
+            byte[] hashBytes = digest.digest(plainPassword.getBytes(StandardCharsets.UTF_8));
             return bytesToHex(hashBytes);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 algorithm not available", e);

@@ -3,6 +3,27 @@
   "configurations": [
     {
       "type": "java",
+      "name": "SeedData",
+      "request": "launch",
+      "mainClass": "hotel.util.SeedData",
+      "projectName": "hotelManagementSystem_c4c46df0"
+    },
+    {
+      "type": "java",
+      "name": "SeedData",
+      "request": "launch",
+      "mainClass": "hotel.test.SeedData",
+      "projectName": "hotelManagementSystem_c4c46df0"
+    },
+    {
+      "type": "java",
+      "name": "testDB",
+      "request": "launch",
+      "mainClass": "hotel.test.testDB",
+      "projectName": "hotelManagementSystem_c4c46df0"
+    },
+    {
+      "type": "java",
       "name": "MainGUI",
       "request": "launch",
       "mainClass": "hotel.main.MainGUI",

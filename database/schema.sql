@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS rooms (
     room_number    TEXT    NOT NULL UNIQUE,
     type           TEXT    NOT NULL,
     price_per_night REAL    NOT NULL,
-    is_available   INTEGER NOT NULL DEFAULT 1
+    status          TEXT    NOT NULL DEFAULT 'available'
 );
 
 -- Table 3: customers
