@@ -24,7 +24,7 @@ public class MainFrame {
 
         SwingUtilities.invokeLater(() -> {
             // Start with login screen
-            LoginFrame.main(args);
+            new LoginFrame().setVisible(true);
         });
     }
 }

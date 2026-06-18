@@ -31,13 +31,13 @@ public class ManageCustomersPanel extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         actions.setOpaque(false);
 
-        JButton addBtn     = AdminUITheme.primaryButton("➕  Add Customer");
         JButton editBtn    = AdminUITheme.secondaryButton("✏  Edit Customer");
         JButton deleteBtn  = AdminUITheme.dangerButton("🗑  Delete Customer");
         JButton refreshBtn = AdminUITheme.secondaryButton("↻  Refresh");
 
-        actions.add(addBtn); actions.add(editBtn);
-        actions.add(deleteBtn); actions.add(refreshBtn);
+        actions.add(editBtn);
+        actions.add(deleteBtn);
+        actions.add(refreshBtn);
 
         JPanel searchPanel = new JPanel(new BorderLayout(8, 0));
         searchPanel.setOpaque(false);
@@ -57,7 +57,6 @@ public class ManageCustomersPanel extends JPanel {
         add(top,                        BorderLayout.NORTH);
         add(AdminUITheme.scroll(table), BorderLayout.CENTER);
 
-        addBtn.addActionListener(e     -> openDialog(null));
         editBtn.addActionListener(e    -> editSelected());
         deleteBtn.addActionListener(e  -> deleteSelected());
         refreshBtn.addActionListener(e -> reload());

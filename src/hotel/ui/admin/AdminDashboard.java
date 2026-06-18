@@ -20,6 +20,7 @@ public class AdminDashboard extends JFrame {
         setTitle("Admin Dashboard - " + user.getUsername());
         setSize(1180, 720);
         setMinimumSize(new Dimension(1000, 640));
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -38,6 +39,7 @@ public class AdminDashboard extends JFrame {
         ManageCustomersPanel customersPanel = new ManageCustomersPanel();
         ManageStaffPanel     staffPanel     = new ManageStaffPanel();
         ManageBookingsPanel  bookingsPanel  = new ManageBookingsPanel();
+        ManagePaymentsPanel  paymentsPanel  = new ManagePaymentsPanel();
         IncomeReportPanel    reportPanel    = new IncomeReportPanel();
 
         contentPanel.setBackground(UITheme.BG);
@@ -46,6 +48,7 @@ public class AdminDashboard extends JFrame {
         contentPanel.add(wrapPage("Customers",     customersPanel), "CUSTOMERS");
         contentPanel.add(wrapPage("Staff",         staffPanel),     "STAFF");
         contentPanel.add(wrapPage("Bookings",      bookingsPanel),  "BOOKINGS");
+        contentPanel.add(wrapPage("Transactions",  paymentsPanel),  "TRANSACTIONS");
         contentPanel.add(wrapPage("Income Report", reportPanel),    "REPORTS");
 
         sidebar.addSection("Summary");
@@ -57,11 +60,13 @@ public class AdminDashboard extends JFrame {
         sidebar.addSection("Bookings");
         sidebar.addNavItem("BOOKINGS",  AdminSidebarPanel.IconType.BOOKINGS,      "Bookings",      () -> { bookingsPanel.reload();  showPage("BOOKINGS");  });
 
-        sidebar.addSection("Cashflow");
-        sidebar.addNavItem("REPORTS",   AdminSidebarPanel.IconType.INCOME,        "Income Report", () -> showPage("REPORTS"));
+        sidebar.addSection("Finances");
+        sidebar.addNavItem("REPORTS",      AdminSidebarPanel.IconType.INCOME,        "Income Report", () -> showPage("REPORTS"));
+        sidebar.addNavItem("TRANSACTIONS", AdminSidebarPanel.IconType.TRANSACTIONS, "Transactions", () -> showPage("TRANSACTIONS"));
 
+        sidebar.setUser(currentUser);
         sidebar.addGlue();
-        sidebar.addNavItem("LOGOUT",    AdminSidebarPanel.IconType.LOGOUT,        "Logout",        this::logout);
+        sidebar.addLogout(this::logout);
 
         // Wrap sidebar with margin so border is visible
         JPanel sidebarWrapper = new JPanel(new BorderLayout());

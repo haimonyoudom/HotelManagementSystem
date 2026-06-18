@@ -3,11 +3,14 @@ package hotel.ui.admin;
 import hotel.dao.PaymentDAO;
 import hotel.model.Payment;
 import hotel.ui.common.UITheme;
+import hotel.util.ReportExporter;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
 import java.util.List;
+import java.util.ArrayList;
 
 public class ManagePaymentsPanel extends JPanel {
     private final PaymentDAO paymentDAO = new PaymentDAO();
@@ -34,11 +37,13 @@ public class ManagePaymentsPanel extends JPanel {
         JButton addBtn = UITheme.primaryButton("Add Payment");
         JButton editBtn = UITheme.secondaryButton("Edit Payment");
         JButton deleteBtn = UITheme.dangerButton("Delete Payment");
+        JButton exportBtn = UITheme.secondaryButton("Export CSV");
         JButton refreshBtn = UITheme.secondaryButton("Refresh");
 
         actions.add(addBtn);
         actions.add(editBtn);
         actions.add(deleteBtn);
+        actions.add(exportBtn);
         actions.add(refreshBtn);
 
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -50,6 +55,7 @@ public class ManagePaymentsPanel extends JPanel {
         addBtn.addActionListener(ignored -> openDialog(null));
         editBtn.addActionListener(ignored -> editSelected());
         deleteBtn.addActionListener(ignored -> deleteSelected());
+        exportBtn.addActionListener(ignored -> exportCsv());
         refreshBtn.addActionListener(ignored -> reload());
 
         reload();
@@ -228,5 +234,44 @@ public class ManagePaymentsPanel extends JPanel {
         gbc.weightx = 1;
 
         form.add(input, gbc);
+    }
+
+    private void exportCsv() {
+        try {
+            if (tableModel.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, "No payment records available to export.",
+                        "Export CSV", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Save Payments CSV");
+            chooser.setSelectedFile(new File("payments.csv"));
+            int choice = chooser.showSaveDialog(this);
+            if (choice != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+
+            File file = chooser.getSelectedFile();
+            java.util.List<String[]> rows = new ArrayList<>();
+            rows.add(new String[] {"ID", "Booking ID", "Amount", "Payment Date", "Method", "Status"});
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                rows.add(new String[] {
+                        String.valueOf(tableModel.getValueAt(i, 0)),
+                        String.valueOf(tableModel.getValueAt(i, 1)),
+                        String.valueOf(tableModel.getValueAt(i, 2)),
+                        String.valueOf(tableModel.getValueAt(i, 3)),
+                        String.valueOf(tableModel.getValueAt(i, 4)),
+                        String.valueOf(tableModel.getValueAt(i, 5))
+                });
+            }
+
+            ReportExporter.exportToCsv(rows, file.getAbsolutePath());
+            JOptionPane.showMessageDialog(this, "Payments exported to " + file.getAbsolutePath(),
+                    "Export CSV", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Failed to export CSV: " + ex.getMessage(),
+                    "Export CSV", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }
