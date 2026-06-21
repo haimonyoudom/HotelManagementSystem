@@ -200,8 +200,8 @@ public class CustomerDashboard extends JFrame {
             @Override public void mouseExited (MouseEvent e) { logoutBtn.setBackground(BG_SIDEBAR); }
         });
         logoutBtn.addActionListener(e -> {
-            // frame.dispose();
-             SwingUtilities.invokeLater(() -> new hotel.ui.common.LoginFrame().setVisible(true));
+            frame.dispose();
+            SwingUtilities.invokeLater(() -> new hotel.ui.common.LoginFrame().setVisible(true));
         });
         sidebar.add(logoutBtn);
 

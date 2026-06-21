@@ -110,7 +110,7 @@ final class CustomerData {
         BookingDAO bookingDAO = new BookingDAO();
         Booking booking = bookingDAO.getById(bookingId);
         if (booking != null) {
-            booking.setStatus("Approved");
+            booking.setStatus("Pending");
             bookingDAO.update(booking);
         }
     }

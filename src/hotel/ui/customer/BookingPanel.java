@@ -175,16 +175,16 @@ public class BookingPanel {
             empty.setHorizontalAlignment(SwingConstants.CENTER);
             roomGrid.add(empty);
         }
-        inner.add(sizeBox(roomGrid, 128));
-        inner.add(Box.createVerticalStrut(14));
+        // inner.add(sizeBox(roomGrid, 128));
+        // inner.add(Box.createVerticalStrut(14));
 
         // ── Special requests ──────────────────────────────────────────
-        JLabel srLabel = lbl("Special requests", F_LABEL, TXT_PRIMARY);
-        srLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        inner.add(srLabel);
-        inner.add(Box.createVerticalStrut(6));
-        inner.add(sizeBox(makeInputField("e.g. high floor, extra pillows..."), 36));
-        inner.add(Box.createVerticalStrut(14));
+        // JLabel srLabel = lbl("Special requests", F_LABEL, TXT_PRIMARY);
+        // srLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // inner.add(srLabel);
+        // inner.add(Box.createVerticalStrut(6));
+        // inner.add(sizeBox(makeInputField("e.g. high floor, extra pillows..."), 36));
+        // inner.add(Box.createVerticalStrut(14));
 
         // ── Summary box ───────────────────────────────────────────────
         JPanel summBox = new JPanel(new GridLayout(4, 2, 0, 4)) {
