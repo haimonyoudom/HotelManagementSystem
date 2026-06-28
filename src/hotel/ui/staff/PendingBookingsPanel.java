@@ -7,6 +7,7 @@ import hotel.model.Room;
 import hotel.service.BookingService;
 import hotel.dao.CustomerDAO;
 import hotel.dao.RoomDAO;
+import hotel.ui.admin.AdminUITheme;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -131,20 +132,7 @@ public class PendingBookingsPanel extends JPanel {
             }
         };
 
-        bookingsTable.setFont(UIConstants.FONT_BODY);
-        bookingsTable.setRowHeight(44);
-        bookingsTable.setBackground(UIConstants.THEME_WHITE_BG);
-        bookingsTable.setForeground(UIConstants.THEME_DARK_FONT);
-        bookingsTable.setGridColor(new Color(200, 200, 200));
-        bookingsTable.setSelectionBackground(new Color(220, 230, 255));
-        bookingsTable.setSelectionForeground(UIConstants.THEME_DARK_FONT);
-
-        JTableHeader header = bookingsTable.getTableHeader();
-        header.setBackground(UIConstants.THEME_WHITE_BG);
-        header.setForeground(UIConstants.THEME_NAVY);
-        header.setFont(UIConstants.FONT_SUBHEADER);
-        header.setPreferredSize(new Dimension(0, 40));
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)));
+        AdminUITheme.styleTable(bookingsTable);
 
         // Wire both renderer AND editor to the Actions column
         TableColumn actionsCol = bookingsTable.getColumn("Actions");
@@ -159,6 +147,7 @@ public class PendingBookingsPanel extends JPanel {
         bookingsTable.getColumn("Check-in").setPreferredWidth(90);
         bookingsTable.getColumn("Check-out").setPreferredWidth(90);
         bookingsTable.getColumn("Status").setPreferredWidth(80);
+        bookingsTable.getColumn("Status").setCellRenderer(AdminUITheme.statusRenderer());
 
         JScrollPane scrollPane = new JScrollPane(bookingsTable);
         scrollPane.setBackground(UIConstants.THEME_WHITE_BG);

@@ -7,6 +7,7 @@ import hotel.model.Room;
 import hotel.service.BookingService;
 import hotel.dao.CustomerDAO;
 import hotel.dao.RoomDAO;
+import hotel.ui.admin.AdminUITheme;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -212,23 +213,8 @@ public class CheckInOutPanel extends JPanel {
         };
 
         scheduleTable = new JTable(scheduleModel);
-        scheduleTable.setFont(UIConstants.FONT_BODY);
-        scheduleTable.setRowHeight(40);
-        scheduleTable.setBackground(Color.WHITE);
-        scheduleTable.setForeground(UIConstants.THEME_DARK_FONT);
-        scheduleTable.setGridColor(new Color(235, 235, 235));
-        scheduleTable.setSelectionBackground(new Color(220, 230, 255));
-        scheduleTable.setShowVerticalLines(false);
-
-        JTableHeader th = scheduleTable.getTableHeader();
-        th.setBackground(Color.WHITE);
-        th.setForeground(new Color(130, 130, 130));
-        th.setFont(UIConstants.FONT_SMALL);
-        th.setPreferredSize(new Dimension(0, 36));
-        th.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 220)));
-
-        // Status badge renderer
-        scheduleTable.getColumn("Status").setCellRenderer(new StatusCellRenderer());
+        AdminUITheme.styleTable(scheduleTable);
+        scheduleTable.getColumn("Status").setCellRenderer(AdminUITheme.statusRenderer());
 
         scheduleTable.getColumn("Booking ID").setPreferredWidth(80);
         scheduleTable.getColumn("Guest Name").setPreferredWidth(140);
@@ -505,49 +491,5 @@ public class CheckInOutPanel extends JPanel {
         p.add(dot);
         p.add(lbl);
         return p;
-    }
-
-    private static class StatusCellRenderer extends DefaultTableCellRenderer {
-        @Override
-        public Component getTableCellRendererComponent(JTable t, Object v,
-                boolean sel, boolean focus, int row, int col) {
-            String status = v != null ? v.toString() : "";
-            Color bg, fg;
-            switch (status.toLowerCase()) {
-                case "confirmed":
-                    bg = new Color(220, 245, 225);
-                    fg = new Color(30, 130, 60);
-                    break;
-                case "pending":
-                    bg = new Color(255, 243, 220);
-                    fg = new Color(180, 110, 20);
-                    break;
-                case "checked_in":
-                    bg = new Color(220, 235, 255);
-                    fg = new Color(40, 80, 200);
-                    break;
-                case "cancelled":
-                    bg = new Color(255, 225, 225);
-                    fg = new Color(180, 40, 40);
-                    break;
-                default:
-                    bg = new Color(235, 235, 235);
-                    fg = new Color(80, 80, 80);
-                    break;
-            }
-
-            JLabel lbl = new JLabel(status.toUpperCase());
-            lbl.setFont(new Font("Dialog", Font.BOLD, 11));
-            lbl.setForeground(fg);
-            lbl.setBackground(bg);
-            lbl.setOpaque(true);
-            lbl.setHorizontalAlignment(SwingConstants.CENTER);
-            lbl.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
-
-            JPanel wrap = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 6));
-            wrap.setBackground(sel ? new Color(220, 230, 255) : Color.WHITE);
-            wrap.add(lbl);
-            return wrap;
-        }
     }
 }

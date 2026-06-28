@@ -15,6 +15,7 @@ import hotel.dao.CustomerDAO;
 import hotel.dao.RoomDAO;
 import hotel.model.Booking;
 import hotel.model.Room;
+import hotel.ui.admin.AdminUITheme;
 
 import java.util.List;
 
@@ -584,77 +585,8 @@ public class StaffDashboard extends JFrame {
         };
 
         JTable table = new JTable(model);
-        table.setBackground(UIConstants.THEME_WHITE_BG);
-        table.setForeground(UIConstants.THEME_DARK_FONT);
-        table.setGridColor(new Color(200, 200, 200));
-        table.setRowHeight(40);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.setShowVerticalLines(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setSelectionBackground(new Color(220, 220, 220));
-        table.setSelectionForeground(UIConstants.THEME_DARK_FONT);
-
-        JTableHeader header = table.getTableHeader();
-        header.setBackground(UIConstants.THEME_WHITE_BG);
-        header.setForeground(UIConstants.THEME_NAVY);
-        header.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        header.setPreferredSize(new Dimension(0, 34));
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)));
-        ((DefaultTableCellRenderer) header.getDefaultRenderer())
-                .setHorizontalAlignment(SwingConstants.LEFT);
-
-        DefaultTableCellRenderer rowRenderer = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable t, Object val,
-                    boolean sel, boolean foc, int row, int col) {
-                super.getTableCellRendererComponent(t, val, sel, foc, row, col);
-                setBackground(row % 2 == 0 ? UIConstants.THEME_WHITE_BG : new Color(248, 248, 248));
-                setForeground(UIConstants.THEME_DARK_FONT);
-                setFont(new Font("Segoe UI", Font.PLAIN, 13));
-                setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
-                return this;
-            }
-        };
-        table.setDefaultRenderer(Object.class, rowRenderer);
-
-        table.getColumnModel().getColumn(3).setCellRenderer(new TableCellRenderer() {
-            public Component getTableCellRendererComponent(JTable t, Object val,
-                    boolean sel, boolean foc, int row, int col) {
-                String status = val == null ? "" : val.toString();
-                Color rowBg = row % 2 == 0 ? UIConstants.THEME_WHITE_BG : new Color(248, 248, 248);
-
-                JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
-                wrapper.setBackground(rowBg);
-
-                JLabel badge = new JLabel(status) {
-                    @Override
-                    protected void paintComponent(Graphics g) {
-                        Graphics2D g2 = (Graphics2D) g.create();
-                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                                RenderingHints.VALUE_ANTIALIAS_ON);
-                        g2.setColor(getBackground());
-                        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-                        g2.dispose();
-                        super.paintComponent(g);
-                    }
-                };
-                badge.setOpaque(false);
-                badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
-                badge.setForeground(Color.WHITE);
-                badge.setHorizontalAlignment(SwingConstants.CENTER);
-                badge.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
-
-                Color bg = UIConstants.BADGE_PENDING;
-                if (status.equalsIgnoreCase("approved"))
-                    bg = UIConstants.BADGE_APPROVED;
-                else if (status.equalsIgnoreCase("checked in"))
-                    bg = UIConstants.BADGE_CHECKIN;
-                badge.setBackground(bg);
-
-                wrapper.add(badge);
-                return wrapper;
-            }
-        });
+        AdminUITheme.styleTable(table);
+        table.getColumnModel().getColumn(3).setCellRenderer(AdminUITheme.statusRenderer());
 
         table.getColumnModel().getColumn(0).setPreferredWidth(140);
         table.getColumnModel().getColumn(1).setPreferredWidth(120);
