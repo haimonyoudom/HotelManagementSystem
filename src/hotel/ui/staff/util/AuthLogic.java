@@ -84,7 +84,7 @@ public class AuthLogic {
 
     // ── SIGNUP LOGIC ────────────────────────────────────────────────
     public static void handleSignup(String name, String email, String phone, String address,
-            String password, String confirm, JTextField[] fields, JLabel statusLbl) {
+            String password, String confirm, JTextField[] fields, JLabel statusLbl, Runnable onSuccess) {
         if (name.isEmpty() || email.isEmpty() || phone.isEmpty() || address.isEmpty() || password.isEmpty()
                 || confirm.isEmpty()) {
             setError(statusLbl, "Please fill in all fields.");
@@ -123,6 +123,11 @@ public class AuthLogic {
             setSuccess(statusLbl, "Account created successfully. You can sign in now.");
             for (JTextField f : fields)
                 f.setText("");
+            if (onSuccess != null) {
+                Timer timer = new Timer(500, evt -> onSuccess.run());
+                timer.setRepeats(false);
+                timer.start();
+            }
         } catch (Exception ex) {
             setError(statusLbl, ex.getMessage() != null && ex.getMessage().contains("UNIQUE")
                     ? "Email already exists. Please use a different email."

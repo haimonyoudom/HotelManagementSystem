@@ -81,6 +81,20 @@ public class PendingBookingsPanel extends JPanel {
                     filterField.setForeground(new Color(130, 130, 130));
                 }
             }
+
+        });
+        filterField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                applyFilter();
+            }
+
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                applyFilter();
+            }
+
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                applyFilter();
+            }
         });
 
         controls.add(filterField);
@@ -242,21 +256,39 @@ public class PendingBookingsPanel extends JPanel {
                 } catch (SQLException e) {
                     /* keep N/A */ }
 
+                String keyword = filterField.getText().trim().toLowerCase();
+                boolean isPlaceholder = keyword.equals("filter bookings...") || keyword.isEmpty();
+
+                if (!isPlaceholder) {
+                    String haystack = (booking.getId() + " " + customerName + " " + roomType + " "
+                            + booking.getStatus()).toLowerCase();
+                    if (!haystack.contains(keyword)) {
+                        continue;
+                    }
+                }
+
                 tableModel.addRow(new Object[] {
                         booking.getId(),
                         customerName,
                         roomType,
+
                         booking.getCheckInDate() != null ? booking.getCheckInDate() : "N/A",
                         booking.getCheckOutDate() != null ? booking.getCheckOutDate() : "N/A",
                         booking.getStatus() != null ? booking.getStatus() : "pending",
                         "ACTIONS"
                 });
             }
+
             updatePageInfo();
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error loading bookings: " + e.getMessage());
         }
+    }
+
+    private void applyFilter() {
+        currentPage = 0;
+        loadBookingsData();
     }
 
     private void updatePageInfo() {

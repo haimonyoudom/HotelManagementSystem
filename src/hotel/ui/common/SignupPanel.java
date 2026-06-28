@@ -97,7 +97,7 @@ public class SignupPanel extends JPanel {
             String address = addressField.getText().trim();
             String password = new String(passwordField.getPassword());
             String confirm = new String(confirmField.getPassword());
-            AuthLogic.handleSignup(name, email, phone, address, password, confirm, fields, statusLbl);
+            AuthLogic.handleSignup(name, email, phone, address, password, confirm, fields, statusLbl, onSignInClick);
         });
     }
 }

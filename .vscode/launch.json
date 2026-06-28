@@ -6,6 +6,13 @@
       "name": "MainGUI",
       "request": "launch",
       "mainClass": "hotel.main.MainGUI",
+      "projectName": "HotelManagementSystem_9d8df36e"
+    },
+    {
+      "type": "java",
+      "name": "MainGUI",
+      "request": "launch",
+      "mainClass": "hotel.main.MainGUI",
       "projectName": "HotelManagementSystem_37a3b8b8"
     },
     {

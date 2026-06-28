@@ -5,7 +5,6 @@ import hotel.model.Room;
 import hotel.dao.RoomDAO;
 
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.SQLException;
@@ -142,8 +141,8 @@ public class RoomStatusPanel extends JPanel {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         bar.setBackground(UIConstants.THEME_WHITE_BG);
 
-        String[] labels = { "All Rooms", "Floor 1", "Floor 2", "Suites" };
-        String[] filters = { null, "1", "2", "Suite" };
+        String[] labels = { "All Rooms", "Singles", "Doubles", "Suites" };
+        String[] filters = { null, "Single", "Double", "Suite" };
 
         for (int i = 0; i < labels.length; i++) {
             final String filter = filters[i];
@@ -211,14 +210,8 @@ public class RoomStatusPanel extends JPanel {
         for (Room r : allRooms) {
             if (filter == null) {
                 filtered.add(r);
-            } else if (filter.equals("1") || filter.equals("2")) {
-                if (r.getRoomNumber() != null && r.getRoomNumber().startsWith(filter)) {
-                    filtered.add(r);
-                }
-            } else if (filter.equals("Suite")) {
-                if (r.getType() != null && r.getType().toLowerCase().contains("suite")) {
-                    filtered.add(r);
-                }
+            } else if (r.getType() != null && r.getType().toLowerCase().contains(filter.toLowerCase())) {
+                filtered.add(r);
             }
         }
 
@@ -403,7 +396,8 @@ public class RoomStatusPanel extends JPanel {
         form.setBorder(BorderFactory.createEmptyBorder(20, 24, 10, 24));
 
         JTextField roomNoField = new JTextField();
-        JTextField typeField = new JTextField();
+        String[] types = { "Single", "Double", "Suite" };
+        JComboBox<String> typeBox = new JComboBox<>(types);
         JTextField priceField = new JTextField();
         String[] statuses = { "available", "cleaning", "maintenance" };
         JComboBox<String> statusBox = new JComboBox<>(statuses);
@@ -411,7 +405,7 @@ public class RoomStatusPanel extends JPanel {
         form.add(fieldLabel("Room Number"));
         form.add(roomNoField);
         form.add(fieldLabel("Type"));
-        form.add(typeField);
+        form.add(typeBox);
         form.add(fieldLabel("Price/Night"));
         form.add(priceField);
         form.add(fieldLabel("Status"));
@@ -430,12 +424,12 @@ public class RoomStatusPanel extends JPanel {
         addBtn.addActionListener(e -> {
             try {
                 String no = roomNoField.getText().trim();
-                String type = typeField.getText().trim();
+                String type = (String) typeBox.getSelectedItem();
                 double price = Double.parseDouble(priceField.getText().trim());
                 String st = (String) statusBox.getSelectedItem();
 
-                if (no.isEmpty() || type.isEmpty()) {
-                    JOptionPane.showMessageDialog(dialog, "Room number and type are required.");
+                if (no.isEmpty()) {
+                    JOptionPane.showMessageDialog(dialog, "Room number is required.");
                     return;
                 }
 

@@ -1,6 +1,5 @@
 package hotel.ui.staff;
 
-import hotel.ui.common.LoginFrame;
 import hotel.ui.staff.util.UIConstants;
 import javax.swing.*;
 import javax.swing.table.*;
@@ -12,6 +11,8 @@ import java.time.format.DateTimeFormatter;
 import hotel.model.User;
 import hotel.service.BookingService;
 import hotel.service.RoomService;
+import hotel.dao.CustomerDAO;
+import hotel.dao.RoomDAO;
 import hotel.model.Booking;
 import hotel.model.Room;
 
@@ -27,6 +28,8 @@ public class StaffDashboard extends JFrame {
     private String staffEmail;
     private BookingService bookingService;
     private RoomService roomService;
+    private hotel.dao.CustomerDAO customerDAO; // ← add
+    private hotel.dao.RoomDAO roomDAO;
     private JButton activeSidebarBtn = null;
 
     // ─────────────────────────────────────────────────────────────────
@@ -35,6 +38,8 @@ public class StaffDashboard extends JFrame {
         this.staffEmail = user.getEmail() != null ? user.getEmail() : user.getUsername() + "@hms.com";
         this.bookingService = new BookingService();
         this.roomService = new RoomService();
+        this.customerDAO = new CustomerDAO(); // ← add
+        this.roomDAO = new RoomDAO();
 
         setupFrame();
         createSidebar();
@@ -768,8 +773,25 @@ public class StaffDashboard extends JFrame {
             String s = b.getStatus();
             if (s.equalsIgnoreCase("pending") || s.equalsIgnoreCase("approved")
                     || s.equalsIgnoreCase("checked in")) {
-                data[i][0] = "Guest #" + b.getCustomerId();
-                data[i][1] = "Room #" + b.getRoomId();
+
+                String guestName = "N/A";
+                try {
+                    hotel.model.Customer c = customerDAO.getById(b.getCustomerId());
+                    if (c != null)
+                        guestName = c.getName();
+                } catch (Exception ignored) {
+                }
+
+                String roomNo = "N/A";
+                try {
+                    Room r = roomDAO.getById(b.getRoomId());
+                    if (r != null)
+                        roomNo = r.getRoomNumber();
+                } catch (Exception ignored) {
+                }
+
+                data[i][0] = guestName;
+                data[i][1] = roomNo;
                 data[i][2] = b.getCheckInDate();
                 data[i][3] = b.getStatus();
                 i++;
