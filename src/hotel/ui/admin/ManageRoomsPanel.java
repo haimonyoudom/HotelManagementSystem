@@ -34,10 +34,10 @@ public class ManageRoomsPanel extends JPanel {
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         actions.setOpaque(false);
-        JButton addBtn = AdminUITheme.primaryButton("➕  Add Room");
-        JButton editBtn = AdminUITheme.secondaryButton("✏  Edit Room");
-        JButton deleteBtn = AdminUITheme.dangerButton("🗑  Delete Room");
-        JButton refreshBtn = AdminUITheme.secondaryButton("↻  Refresh");
+        JButton addBtn = AdminUITheme.primaryButton(" Add Room");
+        JButton editBtn = AdminUITheme.secondaryButton(" Edit Room");
+        JButton deleteBtn = AdminUITheme.dangerButton(" Delete Room");
+        JButton refreshBtn = AdminUITheme.secondaryButton(" Refresh");
         actions.add(addBtn);
         actions.add(editBtn);
         actions.add(deleteBtn);
@@ -334,6 +334,10 @@ public class ManageRoomsPanel extends JPanel {
             String priceStr = priceField.getText().trim();
             if (number.isBlank() || priceStr.isBlank()) {
                 JOptionPane.showMessageDialog(dialog, "Room number and price are required.", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if(Float.parseFloat(priceStr) < 0 ){
+                JOptionPane.showMessageDialog(dialog, "Price should be positive. ", "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             try {

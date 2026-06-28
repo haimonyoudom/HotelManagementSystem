@@ -28,17 +28,17 @@ public class ManagePaymentsPanel extends JPanel {
 
     public ManagePaymentsPanel() {
         setLayout(new BorderLayout(16, 16));
-        setBackground(UITheme.BG);
+        setBackground(AdminUITheme.BG);
         setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         actions.setOpaque(false);
 
-        JButton addBtn = UITheme.primaryButton("Add Payment");
-        JButton editBtn = UITheme.secondaryButton("Edit Payment");
-        JButton deleteBtn = UITheme.dangerButton("Delete Payment");
-        JButton exportBtn = UITheme.secondaryButton("Export CSV");
-        JButton refreshBtn = UITheme.secondaryButton("Refresh");
+        JButton addBtn = AdminUITheme.primaryButton("Add Payment");
+        JButton editBtn = AdminUITheme.secondaryButton("Edit Payment");
+        JButton deleteBtn = AdminUITheme.dangerButton("Delete Payment");
+        JButton exportBtn = AdminUITheme.secondaryButton("Export CSV");
+        JButton refreshBtn = AdminUITheme.secondaryButton("Refresh");
 
         actions.add(addBtn);
         actions.add(editBtn);
@@ -50,7 +50,7 @@ public class ManagePaymentsPanel extends JPanel {
         table.setRowHeight(30);
 
         add(actions, BorderLayout.NORTH);
-        add(UITheme.scroll(table), BorderLayout.CENTER);
+        add(AdminUITheme.scroll(table), BorderLayout.CENTER);
 
         addBtn.addActionListener(ignored -> openDialog(null));
         editBtn.addActionListener(ignored -> editSelected());

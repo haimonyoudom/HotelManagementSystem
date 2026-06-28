@@ -34,12 +34,12 @@ public class IncomeReportPanel extends JPanel {
 
         top.add(reportCard("Total Revenue",  totalRevenueLabel, AdminUITheme.SUCCESS));
         top.add(reportCard("Paid Payments",  paidCountLabel,    AdminUITheme.PRIMARY));
-        top.add(reportCard("Pending",        pendingCountLabel, AdminUITheme.WARNING));
-        top.add(reportCard("Failed",         failedCountLabel,  AdminUITheme.DANGER));
+        // top.add(reportCard("Pending",        pendingCountLabel, AdminUITheme.WARNING));
+        // top.add(reportCard("Failed",         failedCountLabel,  AdminUITheme.DANGER));
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         actions.setOpaque(false);
-        JButton refreshBtn = AdminUITheme.secondaryButton("↻  Refresh");
+        JButton refreshBtn = AdminUITheme.secondaryButton("  Refresh");
         actions.add(refreshBtn);
 
         JPanel north = new JPanel(new BorderLayout(0, 16));
@@ -78,8 +78,8 @@ public class IncomeReportPanel extends JPanel {
 
             totalRevenueLabel.setText(String.format("$%.2f", totalRevenue));
             paidCountLabel.setText(String.valueOf(paidCount));
-            pendingCountLabel.setText(String.valueOf(pendingCount));
-            failedCountLabel.setText(String.valueOf(failedCount));
+            // pendingCountLabel.setText(String.valueOf(pendingCount));
+            // failedCountLabel.setText(String.valueOf(failedCount));
 
             // Re-apply renderer after reload
             table.getColumnModel().getColumn(5).setCellRenderer(AdminUITheme.statusRenderer());

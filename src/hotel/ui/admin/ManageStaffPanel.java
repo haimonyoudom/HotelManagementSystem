@@ -32,10 +32,10 @@ public class ManageStaffPanel extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         actions.setOpaque(false);
 
-        JButton addBtn     = AdminUITheme.primaryButton("➕  Add Staff");
-        JButton editBtn    = AdminUITheme.secondaryButton("✏  Edit Staff");
-        JButton deleteBtn  = AdminUITheme.dangerButton("🗑  Delete Staff");
-        JButton refreshBtn = AdminUITheme.secondaryButton("↻  Refresh");
+        JButton addBtn     = AdminUITheme.primaryButton(" Add Staff");
+        JButton editBtn    = AdminUITheme.secondaryButton(" Edit Staff");
+        JButton deleteBtn  = AdminUITheme.dangerButton(" Delete Staff");
+        JButton refreshBtn = AdminUITheme.secondaryButton(" Refresh");
 
         actions.add(addBtn);
         actions.add(editBtn);

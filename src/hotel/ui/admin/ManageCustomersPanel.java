@@ -31,9 +31,9 @@ public class ManageCustomersPanel extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         actions.setOpaque(false);
 
-        JButton editBtn    = AdminUITheme.secondaryButton("✏  Edit Customer");
-        JButton deleteBtn  = AdminUITheme.dangerButton("🗑  Delete Customer");
-        JButton refreshBtn = AdminUITheme.secondaryButton("↻  Refresh");
+        JButton editBtn    = AdminUITheme.secondaryButton(" Edit Customer");
+        JButton deleteBtn  = AdminUITheme.dangerButton(" Delete Customer");
+        JButton refreshBtn = AdminUITheme.secondaryButton(" Refresh");
 
         actions.add(editBtn);
         actions.add(deleteBtn);

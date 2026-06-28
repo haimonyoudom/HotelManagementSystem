@@ -37,7 +37,7 @@ public class ManageBookingsPanel extends JPanel {
 
     public ManageBookingsPanel() {
         setLayout(new BorderLayout(16, 16));
-        setBackground(UITheme.BG);
+        setBackground(AdminUITheme.BG);
         setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
         JPanel top = new JPanel(new BorderLayout(12, 12));
@@ -46,9 +46,9 @@ public class ManageBookingsPanel extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         actions.setOpaque(false);
 
-        JButton editBtn = UITheme.secondaryButton("Edit Booking");
-        JButton deleteBtn = UITheme.dangerButton("Delete Booking");
-        JButton refreshBtn = UITheme.secondaryButton("Refresh");
+        JButton editBtn    = AdminUITheme.secondaryButton(" Edit bookings");
+        JButton deleteBtn  = AdminUITheme.dangerButton(" Delete bookings");
+        JButton refreshBtn = AdminUITheme.secondaryButton(" Refresh");
 
         actions.add(editBtn);
         actions.add(deleteBtn);
@@ -71,7 +71,7 @@ public class ManageBookingsPanel extends JPanel {
         table.setRowHeight(30);
 
         add(top, BorderLayout.NORTH);
-        add(UITheme.scroll(table), BorderLayout.CENTER);
+        add(AdminUITheme.scroll(table), BorderLayout.CENTER);
 
         editBtn.addActionListener(ignored -> editSelected());
         deleteBtn.addActionListener(ignored -> deleteSelected());
