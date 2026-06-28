@@ -1,6 +1,8 @@
 package hotel.ui.staff;
 
 import hotel.ui.common.LoginFrame;
+import hotel.ui.admin.ManagePaymentsPanel;
+import hotel.ui.admin.ManageRoomsPanel;
 import hotel.ui.staff.util.UIConstants;
 import javax.swing.*;
 import javax.swing.table.*;
@@ -28,6 +30,7 @@ public class StaffDashboard extends JFrame {
     private BookingService bookingService;
     private RoomService roomService;
     private JButton activeSidebarBtn = null;
+    private ManageRoomsPanel roomsPanel;
 
     // ─────────────────────────────────────────────────────────────────
     public StaffDashboard(User user) {
@@ -91,9 +94,10 @@ public class StaffDashboard extends JFrame {
                 "src/hotel/images/resources/dashboardicon.png",
                 "src/hotel/images/resources/bookingicon.png",
                 "src/hotel/images/resources/check-inicon.png",
-                "src/hotel/images/resources/roomicon.png"
+                "src/hotel/images/resources/roomicon.png",
+                "src/hotel/images/resources/checkouticon.png"
         };
-        String[] labels = { "Dashboard", "Bookings", "Check-in/Out", "Rooms" };
+        String[] labels = { "Dashboard", "Bookings", "Check-in/Out", "Rooms", "Manage Payment" };
 
         for (int i = 0; i < labels.length; i++) {
             JButton btn = buildNavButton(iconPaths[i], labels[i]);
@@ -278,7 +282,15 @@ public class StaffDashboard extends JFrame {
                 panel = new CheckInOutPanel();
                 break;
             case "Rooms":
-                panel = new RoomStatusPanel(() -> refreshDashboard());
+                if (roomsPanel == null) {
+                    roomsPanel = new ManageRoomsPanel();
+                } else {
+                    roomsPanel.reload();
+                }
+                panel = roomsPanel;
+                break;
+            case "Manage Payment":
+                panel = new ManagePaymentsPanel();
                 break;
             default:
                 refreshDashboard();

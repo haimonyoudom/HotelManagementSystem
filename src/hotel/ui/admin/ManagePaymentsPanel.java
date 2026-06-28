@@ -147,7 +147,7 @@ public class ManagePaymentsPanel extends JPanel {
         JTextField bookingIdField = UITheme.textField();
         JTextField amountField = UITheme.textField();
         JTextField paymentDateField = UITheme.textField();
-        JComboBox<String> methodBox = UITheme.comboBox("cash", "card", "qr", "bank_transfer");
+        JComboBox<String> methodBox = UITheme.comboBox("CASH", "CARD", "QR", "BANK_TRANfer");
         JComboBox<String> statusBox = UITheme.comboBox("pending", "paid", "failed", "refunded");
 
         if (editing != null) {

@@ -6,6 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="fdb0d8cf-a49a-4bb0-87a7-ca2bc9d53193" name="Changes" comment="sample gui">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hotel/ui/admin/ManagePaymentsPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/hotel/ui/admin/ManagePaymentsPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hotel/ui/staff/StaffDashboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/hotel/ui/staff/StaffDashboard.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,8 +20,7 @@
     </colors>
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="277" />
-    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
+    <option name="cachedIndexableFilesCount" value="279" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -54,23 +55,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0183248636904674" />
-      <entry key="MS500" value="2.3060288153343427" />
-      <entry key="S2" value="7.26622166104151" />
-      <entry key="S5" value="18.44491215208315" />
-      <entry key="S10" value="32.666501285706886" />
-      <entry key="S30" value="71.9238841359742" />
-      <entry key="S60" value="102.60703247026251" />
-      <entry key="M2" value="128.6651392129728" />
-      <entry key="M5" value="167.01873734078436" />
-      <entry key="M10" value="230.03390792275724" />
-      <entry key="M15" value="291.5466277543927" />
-      <entry key="M30" value="458.86702500125904" />
-      <entry key="H1" value="700.1534589647463" />
-      <entry key="H2" value="940.7714804250041" />
-      <entry key="H4" value="1118.3093098208724" />
-      <entry key="D1" value="1309.0975240430423" />
-      <entry key="W1" value="1346.5984396706317" />
+      <entry key="MS100" value="1.940407028539891" />
+      <entry key="MS500" value="3.560661336816085" />
+      <entry key="S2" value="8.66932885602219" />
+      <entry key="S5" value="18.663896666757374" />
+      <entry key="S10" value="33.89013872920064" />
+      <entry key="S30" value="73.78642877486547" />
+      <entry key="S60" value="103.63084046439904" />
+      <entry key="M2" value="139.7464247511889" />
+      <entry key="M5" value="242.44781620803766" />
+      <entry key="M10" value="375.3259141979652" />
+      <entry key="M15" value="474.4337235400404" />
+      <entry key="M30" value="693.9814733425135" />
+      <entry key="H1" value="978.654828099701" />
+      <entry key="H2" value="1259.1686365148723" />
+      <entry key="H4" value="1467.892752040327" />
+      <entry key="D1" value="1694.5036297756599" />
+      <entry key="W1" value="1739.33718008308" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -92,23 +93,23 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.9702566725740435" />
-      <entry key="MS500" value="2.286415822800766" />
-      <entry key="S2" value="7.251398052042684" />
-      <entry key="S5" value="18.429890661972433" />
-      <entry key="S10" value="32.65314529351441" />
-      <entry key="S30" value="71.91384762180621" />
-      <entry key="S60" value="102.59979081668857" />
-      <entry key="M2" value="128.66055869264625" />
-      <entry key="M5" value="167.01627631977215" />
-      <entry key="M10" value="230.0320538243955" />
-      <entry key="M15" value="291.54493545024405" />
-      <entry key="M30" value="458.86555836720436" />
-      <entry key="H1" value="700.1523160894121" />
-      <entry key="H2" value="940.7707184939055" />
-      <entry key="H4" value="1118.3088611155197" />
-      <entry key="D1" value="1309.0974373947947" />
-      <entry key="W1" value="1346.5984269628948" />
+      <entry key="MS100" value="1.8339943839248423" />
+      <entry key="MS500" value="3.5190540541403577" />
+      <entry key="S2" value="8.64281518010376" />
+      <entry key="S5" value="18.641125185739323" />
+      <entry key="S10" value="33.86949995668786" />
+      <entry key="S30" value="73.77113107087622" />
+      <entry key="S60" value="103.61987398252025" />
+      <entry key="M2" value="139.73885602651305" />
+      <entry key="M5" value="242.44252316737928" />
+      <entry key="M10" value="375.32186566187966" />
+      <entry key="M15" value="474.4303152119969" />
+      <entry key="M30" value="693.9789727668053" />
+      <entry key="H1" value="978.6530885557326" />
+      <entry key="H2" value="1259.167539845246" />
+      <entry key="H4" value="1467.892122274167" />
+      <entry key="D1" value="1694.5035104148565" />
+      <entry key="W1" value="1739.3371626293167" />
     </decayedShown>
   </component>
   <component name="ProblemsViewState">
@@ -140,7 +141,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "new__admin",
+    "git-widget-placeholder": "main",
     "git.auto.fetch.suggestion.counter": "3",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
@@ -267,6 +268,7 @@
       <workItem from="1781489435629" duration="2202000" />
       <workItem from="1781641379730" duration="1000" />
       <workItem from="1781831317751" duration="3064000" />
+      <workItem from="1782682539201" duration="802000" />
     </task>
     <task id="LOCAL-00001" summary="update gitignore">
       <option name="closed" value="true" />
