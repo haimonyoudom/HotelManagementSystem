@@ -7,12 +7,14 @@ import hotel.model.Room;
 import hotel.service.BookingService;
 import hotel.dao.CustomerDAO;
 import hotel.dao.RoomDAO;
+import hotel.ui.admin.AdminUITheme;
 
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.sql.SQLException;
 
 public class CheckInOutPanel extends JPanel {
@@ -20,16 +22,19 @@ public class CheckInOutPanel extends JPanel {
     private BookingService bookingService;
     private CustomerDAO customerDAO;
     private RoomDAO roomDAO;
+    private Map<Integer, String> guestNameCache = new HashMap<>();
 
     // Check-in fields
-    private JTextField ciBookingIdField;
-    private JTextField ciRoomField;
-    private JTextField ciGuestField;
+    private JComboBox<Booking> ciBookingBox;
+    private JLabel ciRoomValue;
+    private JLabel ciGuestValue;
+    private JLabel ciRoomTypeValue;
 
     // Check-out fields
-    private JTextField coBookingIdField;
-    private JTextField coRoomField;
-    private JTextField coGuestField;
+    private JComboBox<Booking> coBookingBox;
+    private JLabel coRoomValue;
+    private JLabel coGuestValue;
+    private JLabel coRoomTypeValue;
 
     // Schedule table
     private JTable scheduleTable;
@@ -46,6 +51,9 @@ public class CheckInOutPanel extends JPanel {
 
         add(buildHeader(), BorderLayout.NORTH);
         add(buildContent(), BorderLayout.CENTER);
+
+        refreshDropdowns();
+        loadSchedule();
     }
 
     // ── Header ────────────────────────────────────────────────────────
@@ -83,34 +91,40 @@ public class CheckInOutPanel extends JPanel {
         JPanel card = createCard();
         card.setLayout(new BorderLayout(0, 12));
 
-        // Card title
         JLabel title = new JLabel("  Check-in");
         title.setFont(UIConstants.FONT_SUBHEADER);
         title.setForeground(UIConstants.THEME_NAVY);
         title.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
         card.add(title, BorderLayout.NORTH);
 
-        // Fields panel
         JPanel fields = new JPanel(new GridLayout(3, 1, 0, 10));
         fields.setBackground(Color.WHITE);
 
-        // Row 1: Booking ID + Room No
+        ciBookingBox = new JComboBox<>();
+        ciBookingBox.setFont(UIConstants.FONT_BODY);
+        ciBookingBox.setRenderer(new BookingComboRenderer());
+
+        ciRoomValue = new JLabel("—");
+        ciGuestValue = new JLabel("—");
+        ciRoomTypeValue = new JLabel("—");
+        styleValueLabel(ciRoomValue);
+        styleValueLabel(ciGuestValue);
+        styleValueLabel(ciRoomTypeValue);
+
         JPanel row1 = new JPanel(new GridLayout(1, 2, 10, 0));
         row1.setBackground(Color.WHITE);
-        ciBookingIdField = createField("e.g. BK-9821");
-        ciRoomField = createField("e.g. 402");
-        JPanel bkCol = labeledField("Booking ID", ciBookingIdField);
-        JPanel rmCol = labeledField("Room No.", ciRoomField);
-        row1.add(bkCol);
-        row1.add(rmCol);
+        row1.add(labeledField("Booking", ciBookingBox));
+        row1.add(labeledValue("Room No.", ciRoomValue));
 
-        // Row 2: Guest Name
-        ciGuestField = createField("Enter guest's full name");
-        JPanel row2 = labeledField("Guest Name", ciGuestField);
+        JPanel row2 = new JPanel(new GridLayout(1, 2, 10, 0));
+        row2.setBackground(Color.WHITE);
+        row2.add(labeledValue("Guest Name", ciGuestValue));
+        row2.add(labeledValue("Room Type", ciRoomTypeValue));
 
-        // Row 3: Button
         JButton confirmBtn = createPrimaryButton("Confirm Arrival", UIConstants.ACCENT_GREEN);
         confirmBtn.addActionListener(e -> handleCheckIn());
+
+        ciBookingBox.addActionListener(e -> updateCheckInPreview());
 
         fields.add(row1);
         fields.add(row2);
@@ -134,20 +148,34 @@ public class CheckInOutPanel extends JPanel {
         JPanel fields = new JPanel(new GridLayout(3, 1, 0, 10));
         fields.setBackground(Color.WHITE);
 
+        coBookingBox = new JComboBox<>();
+        coBookingBox.setFont(UIConstants.FONT_BODY);
+        coBookingBox.setRenderer(new BookingComboRenderer());
+
+        coRoomValue = new JLabel("—");
+        coGuestValue = new JLabel("—");
+        coRoomTypeValue = new JLabel("—");
+        styleValueLabel(coRoomValue);
+        styleValueLabel(coGuestValue);
+        styleValueLabel(coRoomTypeValue);
+
         JPanel row1 = new JPanel(new GridLayout(1, 2, 10, 0));
         row1.setBackground(Color.WHITE);
-        coBookingIdField = createField("e.g. BK-7742");
-        coRoomField = createField("e.g. 108");
-        row1.add(labeledField("Booking ID", coBookingIdField));
-        row1.add(labeledField("Room No.", coRoomField));
+        row1.add(labeledField("Booking", coBookingBox));
+        row1.add(labeledValue("Room No.", coRoomValue));
 
-        coGuestField = createField("Enter guest's full name");
+        JPanel row2 = new JPanel(new GridLayout(1, 2, 10, 0));
+        row2.setBackground(Color.WHITE);
+        row2.add(labeledValue("Guest Name", coGuestValue));
+        row2.add(labeledValue("Room Type", coRoomTypeValue));
 
         JButton departBtn = createPrimaryButton("Process Departure", new Color(100, 110, 140));
         departBtn.addActionListener(e -> handleCheckOut());
 
+        coBookingBox.addActionListener(e -> updateCheckOutPreview());
+
         fields.add(row1);
-        fields.add(labeledField("Guest Name", coGuestField));
+        fields.add(row2);
         fields.add(departBtn);
 
         card.add(fields, BorderLayout.CENTER);
@@ -176,7 +204,7 @@ public class CheckInOutPanel extends JPanel {
         hdr.add(badges, BorderLayout.EAST);
 
         // Table
-        String[] cols = { "Booking ID", "Guest Name", "Room", "Type", "Status" };
+        String[] cols = { "Booking ID", "Guest Name", "Room", "Room Type", "Check-in", "Check-out", "Status" };
         scheduleModel = new DefaultTableModel(new Object[][] {}, cols) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -185,30 +213,15 @@ public class CheckInOutPanel extends JPanel {
         };
 
         scheduleTable = new JTable(scheduleModel);
-        scheduleTable.setFont(UIConstants.FONT_BODY);
-        scheduleTable.setRowHeight(40);
-        scheduleTable.setBackground(Color.WHITE);
-        scheduleTable.setForeground(UIConstants.THEME_DARK_FONT);
-        scheduleTable.setGridColor(new Color(235, 235, 235));
-        scheduleTable.setSelectionBackground(new Color(220, 230, 255));
-        scheduleTable.setShowVerticalLines(false);
-
-        JTableHeader th = scheduleTable.getTableHeader();
-        th.setBackground(Color.WHITE);
-        th.setForeground(new Color(130, 130, 130));
-        th.setFont(UIConstants.FONT_SMALL);
-        th.setPreferredSize(new Dimension(0, 36));
-        th.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 220)));
-
-        // Status badge renderer
-        scheduleTable.getColumn("Type")
-                .setCellRenderer(new BadgeCellRenderer(new Color(220, 235, 255), new Color(40, 80, 180)));
-        scheduleTable.getColumn("Status").setCellRenderer(new StatusCellRenderer());
+        AdminUITheme.styleTable(scheduleTable);
+        scheduleTable.getColumn("Status").setCellRenderer(AdminUITheme.statusRenderer());
 
         scheduleTable.getColumn("Booking ID").setPreferredWidth(80);
-        scheduleTable.getColumn("Guest Name").setPreferredWidth(160);
+        scheduleTable.getColumn("Guest Name").setPreferredWidth(140);
         scheduleTable.getColumn("Room").setPreferredWidth(60);
-        scheduleTable.getColumn("Type").setPreferredWidth(90);
+        scheduleTable.getColumn("Room Type").setPreferredWidth(90);
+        scheduleTable.getColumn("Check-in").setPreferredWidth(100);
+        scheduleTable.getColumn("Check-out").setPreferredWidth(100);
         scheduleTable.getColumn("Status").setPreferredWidth(110);
 
         JScrollPane scroll = new JScrollPane(scheduleTable);
@@ -222,84 +235,150 @@ public class CheckInOutPanel extends JPanel {
         return panel;
     }
 
-    // ── Actions ───────────────────────────────────────────────────────
-    private void handleCheckIn() {
-        String bookingIdStr = ciBookingIdField.getText().trim();
-        String guestName = ciGuestField.getText().trim();
+    private JPanel labeledValue(String label, JLabel valueLbl) {
+        JPanel p = new JPanel(new BorderLayout(0, 4));
+        p.setBackground(Color.WHITE);
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(UIConstants.FONT_SMALL);
+        lbl.setForeground(new Color(100, 100, 110));
+        p.add(lbl, BorderLayout.NORTH);
+        p.add(valueLbl, BorderLayout.CENTER);
+        return p;
+    }
 
-        if (bookingIdStr.isEmpty() || bookingIdStr.equals("e.g. BK-9821")) {
-            showError("Please enter a Booking ID.");
-            return;
+    private void styleValueLabel(JLabel lbl) {
+        lbl.setFont(UIConstants.FONT_BODY);
+        lbl.setForeground(UIConstants.THEME_DARK_FONT);
+        lbl.setBackground(new Color(248, 249, 251));
+        lbl.setOpaque(true);
+        lbl.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(210, 214, 220), 1, true),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+    }
+
+    private class BookingComboRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                boolean isSelected, boolean cellHasFocus) {
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            if (value instanceof Booking b) {
+                String guest = guestNameCache.getOrDefault(b.getId(), "Unknown");
+                setText(b.getId() + " — " + guest);
+            } else {
+                setText("Select booking...");
+            }
+            return this;
         }
+    }
+
+    private void refreshDropdowns() {
+        ciBookingBox.removeAllItems();
+        coBookingBox.removeAllItems();
+        guestNameCache.clear();
 
         try {
-            int bookingId = parseBookingId(bookingIdStr);
-            Booking booking = getBookingById(bookingId);
-            if (booking == null) {
-                showError("Booking #" + bookingId + " not found.");
-                return;
-            }
-            if (!"pending".equalsIgnoreCase(booking.getStatus()) &&
-                    !"confirmed".equalsIgnoreCase(booking.getStatus())) {
-                showError("Booking #" + bookingId + " is not eligible for check-in (status: " + booking.getStatus()
-                        + ").");
-                return;
-            }
+            List<Booking> bookings = bookingService.getAllBookings();
+            for (Booking b : bookings) {
+                String status = b.getStatus() != null ? b.getStatus() : "";
+                String guest = "N/A";
+                try {
+                    Customer c = customerDAO.getById(b.getCustomerId());
+                    if (c != null)
+                        guest = c.getName();
+                } catch (SQLException ignored) {
+                }
+                guestNameCache.put(b.getId(), guest);
 
-            bookingService.checkInBooking(bookingId);
+                if ("confirmed".equalsIgnoreCase(status)) {
+                    ciBookingBox.addItem(b);
+                } else if ("checked_in".equalsIgnoreCase(status)) {
+                    coBookingBox.addItem(b);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
+        updateCheckInPreview();
+        updateCheckOutPreview();
+    }
+
+    private void updateCheckInPreview() {
+        Booking b = (Booking) ciBookingBox.getSelectedItem();
+        if (b == null) {
+            ciRoomValue.setText("—");
+            ciGuestValue.setText("—");
+            ciRoomTypeValue.setText("—");
+            return;
+        }
+        ciGuestValue.setText(guestNameCache.getOrDefault(b.getId(), "N/A"));
+        try {
+            Room r = roomDAO.getById(b.getRoomId());
+            ciRoomValue.setText(r != null ? r.getRoomNumber() : "N/A");
+            ciRoomTypeValue.setText(r != null ? r.getType() : "N/A");
+        } catch (SQLException e) {
+            ciRoomValue.setText("N/A");
+            ciRoomTypeValue.setText("N/A");
+        }
+    }
+
+    private void updateCheckOutPreview() {
+        Booking b = (Booking) coBookingBox.getSelectedItem();
+        if (b == null) {
+            coRoomValue.setText("—");
+            coGuestValue.setText("—");
+            coRoomTypeValue.setText("—");
+            return;
+        }
+        coGuestValue.setText(guestNameCache.getOrDefault(b.getId(), "N/A"));
+        try {
+            Room r = roomDAO.getById(b.getRoomId());
+            coRoomValue.setText(r != null ? r.getRoomNumber() : "N/A");
+            coRoomTypeValue.setText(r != null ? r.getType() : "N/A");
+        } catch (SQLException e) {
+            coRoomValue.setText("N/A");
+            coRoomTypeValue.setText("N/A");
+        }
+    }
+
+    // ── Actions ───────────────────────────────────────────────────────
+    private void handleCheckIn() {
+        Booking booking = (Booking) ciBookingBox.getSelectedItem();
+        if (booking == null) {
+            showError("Please select a booking to check in.");
+            return;
+        }
+        try {
+            bookingService.checkInBooking(booking.getId());
             JOptionPane.showMessageDialog(this,
-                    "Check-in successful for Booking #" + bookingId + ".",
+                    "Check-in successful for Booking #" + booking.getId() + ".",
                     "Check-In Confirmed", JOptionPane.INFORMATION_MESSAGE);
-
-            clearFields(ciBookingIdField, ciRoomField, ciGuestField);
+            refreshDropdowns();
             loadSchedule();
-
-        } catch (NumberFormatException ex) {
-            showError("Invalid Booking ID format. Use a number or BK-XXXX.");
         } catch (Exception ex) {
             showError("Check-in failed: " + ex.getMessage());
         }
     }
 
     private void handleCheckOut() {
-        String bookingIdStr = coBookingIdField.getText().trim();
-
-        if (bookingIdStr.isEmpty() || bookingIdStr.equals("e.g. BK-7742")) {
-            showError("Please enter a Booking ID.");
+        Booking booking = (Booking) coBookingBox.getSelectedItem();
+        if (booking == null) {
+            showError("Please select a booking to check out.");
             return;
         }
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Process departure for Booking #" + booking.getId() + "?",
+                "Confirm Check-Out", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION)
+            return;
 
         try {
-            int bookingId = parseBookingId(bookingIdStr);
-            Booking booking = getBookingById(bookingId);
-            if (booking == null) {
-                showError("Booking #" + bookingId + " not found.");
-                return;
-            }
-
-            if (!"checked_in".equalsIgnoreCase(booking.getStatus())) {
-                showError("Booking #" + bookingId + " has not checked in yet.");
-                return;
-            }
-
-            int confirm = JOptionPane.showConfirmDialog(this,
-                    "Process departure for Booking #" + bookingId + "?",
-                    "Confirm Check-Out", JOptionPane.YES_NO_OPTION);
-
-            if (confirm == JOptionPane.YES_OPTION) {
-                bookingService.cancelBooking(bookingId); // marks completed / frees room
-
-                JOptionPane.showMessageDialog(this,
-                        "Check-out processed for Booking #" + bookingId + ".",
-                        "Departure Processed", JOptionPane.INFORMATION_MESSAGE);
-
-                clearFields(coBookingIdField, coRoomField, coGuestField);
-                loadSchedule();
-            }
-
-        } catch (NumberFormatException ex) {
-            showError("Invalid Booking ID format. Use a number or BK-XXXX.");
+            bookingService.cancelBooking(booking.getId()); // marks completed / frees room
+            JOptionPane.showMessageDialog(this,
+                    "Check-out processed for Booking #" + booking.getId() + ".",
+                    "Departure Processed", JOptionPane.INFORMATION_MESSAGE);
+            refreshDropdowns();
+            loadSchedule();
         } catch (Exception ex) {
             showError("Check-out failed: " + ex.getMessage());
         }
@@ -319,7 +398,7 @@ public class CheckInOutPanel extends JPanel {
 
                 String guestName = "N/A";
                 String roomNo = "N/A";
-                String type = "confirmed".equalsIgnoreCase(status) ? "Check-in" : "Check-out";
+                String roomType = "N/A";
 
                 try {
                     Customer c = customerDAO.getById(b.getCustomerId());
@@ -332,14 +411,17 @@ public class CheckInOutPanel extends JPanel {
                     Room r = roomDAO.getById(b.getRoomId());
                     if (r != null)
                         roomNo = r.getRoomNumber();
+                    roomType = r.getType();
                 } catch (SQLException ignored) {
                 }
 
                 scheduleModel.addRow(new Object[] {
-                        "BK-" + b.getId(),
+                        b.getId(),
                         guestName,
                         roomNo,
-                        type,
+                        roomType,
+                        b.getCheckInDate() != null ? b.getCheckInDate() : "N/A",
+                        b.getCheckOutDate() != null ? b.getCheckOutDate() : "N/A",
                         status
                 });
             }
@@ -349,26 +431,6 @@ public class CheckInOutPanel extends JPanel {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────
-    private int parseBookingId(String input) {
-        // Accept "BK-1234" or plain "1234"
-        return Integer.parseInt(input.replaceAll("(?i)BK-", "").trim());
-    }
-
-    private Booking getBookingById(int id) {
-        try {
-            return bookingService.getAllBookings().stream()
-                    .filter(b -> b.getId() == id)
-                    .findFirst().orElse(null);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private void clearFields(JTextField... fields) {
-        for (JTextField f : fields)
-            f.setText("");
-    }
-
     private void showError(String msg) {
         JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
     }
@@ -383,39 +445,7 @@ public class CheckInOutPanel extends JPanel {
         return card;
     }
 
-    private JTextField createField(String placeholder) {
-        JTextField field = new JTextField();
-        field.setFont(UIConstants.FONT_BODY);
-        field.setForeground(new Color(130, 130, 130));
-        field.setBackground(new Color(248, 249, 251));
-        field.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(210, 214, 220), 1, true),
-                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-        field.setText(placeholder);
-
-        field.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                if (field.getText().equals(placeholder)) {
-                    field.setText("");
-                    field.setForeground(UIConstants.THEME_DARK_FONT);
-                    field.setBackground(Color.WHITE);
-                }
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (field.getText().isEmpty()) {
-                    field.setText(placeholder);
-                    field.setForeground(new Color(130, 130, 130));
-                    field.setBackground(new Color(248, 249, 251));
-                }
-            }
-        });
-        return field;
-    }
-
-    private JPanel labeledField(String label, JTextField field) {
+    private JPanel labeledField(String label, JComponent field) {
         JPanel p = new JPanel(new BorderLayout(0, 4));
         p.setBackground(Color.WHITE);
         JLabel lbl = new JLabel(label);
@@ -461,76 +491,5 @@ public class CheckInOutPanel extends JPanel {
         p.add(dot);
         p.add(lbl);
         return p;
-    }
-
-    // ── Cell Renderers ────────────────────────────────────────────────
-    private static class BadgeCellRenderer extends DefaultTableCellRenderer {
-        private final Color bg, fg;
-
-        BadgeCellRenderer(Color bg, Color fg) {
-            this.bg = bg;
-            this.fg = fg;
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable t, Object v,
-                boolean sel, boolean focus, int row, int col) {
-            JLabel lbl = new JLabel(v != null ? v.toString() : "");
-            lbl.setFont(new Font("Dialog", Font.BOLD, 11));
-            lbl.setForeground(fg);
-            lbl.setBackground(bg);
-            lbl.setOpaque(true);
-            lbl.setHorizontalAlignment(SwingConstants.CENTER);
-            lbl.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
-
-            JPanel wrap = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 6));
-            wrap.setBackground(sel ? new Color(220, 230, 255) : Color.WHITE);
-            wrap.add(lbl);
-            return wrap;
-        }
-    }
-
-    private static class StatusCellRenderer extends DefaultTableCellRenderer {
-        @Override
-        public Component getTableCellRendererComponent(JTable t, Object v,
-                boolean sel, boolean focus, int row, int col) {
-            String status = v != null ? v.toString() : "";
-            Color bg, fg;
-            switch (status.toLowerCase()) {
-                case "confirmed":
-                    bg = new Color(220, 245, 225);
-                    fg = new Color(30, 130, 60);
-                    break;
-                case "pending":
-                    bg = new Color(255, 243, 220);
-                    fg = new Color(180, 110, 20);
-                    break;
-                case "checked_in":
-                    bg = new Color(220, 235, 255);
-                    fg = new Color(40, 80, 200);
-                    break;
-                case "cancelled":
-                    bg = new Color(255, 225, 225);
-                    fg = new Color(180, 40, 40);
-                    break;
-                default:
-                    bg = new Color(235, 235, 235);
-                    fg = new Color(80, 80, 80);
-                    break;
-            }
-
-            JLabel lbl = new JLabel(status.toUpperCase());
-            lbl.setFont(new Font("Dialog", Font.BOLD, 11));
-            lbl.setForeground(fg);
-            lbl.setBackground(bg);
-            lbl.setOpaque(true);
-            lbl.setHorizontalAlignment(SwingConstants.CENTER);
-            lbl.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
-
-            JPanel wrap = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 6));
-            wrap.setBackground(sel ? new Color(220, 230, 255) : Color.WHITE);
-            wrap.add(lbl);
-            return wrap;
-        }
     }
 }

@@ -5,12 +5,13 @@ import hotel.model.Room;
 import hotel.dao.RoomDAO;
 
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class RoomStatusPanel extends JPanel {
 
@@ -19,6 +20,7 @@ public class RoomStatusPanel extends JPanel {
     private JPanel roomGrid;
     private JLabel availableCount, bookedCount, cleaningCount, maintenanceCount;
     private Runnable onRoomChanged;
+    private final Map<String, ImageIcon> imageCache = new HashMap<>();
 
     // Filter buttons
     private JButton activeFilter;
@@ -113,7 +115,7 @@ public class RoomStatusPanel extends JPanel {
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {
                 int width = scroll.getViewport().getWidth();
-                int cardWidth = 184; // card width + gap
+                int cardWidth = 206;
                 int cols = Math.max(1, width / cardWidth);
                 GridLayout gl = (GridLayout) roomGrid.getLayout();
                 if (gl.getColumns() != cols) {
@@ -142,8 +144,8 @@ public class RoomStatusPanel extends JPanel {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         bar.setBackground(UIConstants.THEME_WHITE_BG);
 
-        String[] labels = { "All Rooms", "Floor 1", "Floor 2", "Suites" };
-        String[] filters = { null, "1", "2", "Suite" };
+        String[] labels = { "All", "Single", "Double", "Suite" };
+        String[] filters = { null, "Single", "Double", "Suite" };
 
         for (int i = 0; i < labels.length; i++) {
             final String filter = filters[i];
@@ -211,14 +213,8 @@ public class RoomStatusPanel extends JPanel {
         for (Room r : allRooms) {
             if (filter == null) {
                 filtered.add(r);
-            } else if (filter.equals("1") || filter.equals("2")) {
-                if (r.getRoomNumber() != null && r.getRoomNumber().startsWith(filter)) {
-                    filtered.add(r);
-                }
-            } else if (filter.equals("Suite")) {
-                if (r.getType() != null && r.getType().toLowerCase().contains("suite")) {
-                    filtered.add(r);
-                }
+            } else if (r.getType() != null && r.getType().toLowerCase().contains(filter.toLowerCase())) {
+                filtered.add(r);
             }
         }
 
@@ -232,40 +228,73 @@ public class RoomStatusPanel extends JPanel {
     }
 
     // ── Single room card ──────────────────────────────────────────────
+    // AFTER:
     private JPanel buildRoomCard(Room room) {
-        JPanel card = new JPanel(new BorderLayout(0, 6));
+        JPanel card = new JPanel(new BorderLayout(0, 8));
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220, 222, 230), 1, true),
-                BorderFactory.createEmptyBorder(12, 14, 12, 14)));
-        card.setPreferredSize(new Dimension(170, 110));
+                BorderFactory.createEmptyBorder(10, 12, 12, 12)));
+        card.setPreferredSize(new Dimension(190, 190));
 
-        // Top row: room number + status badge
-        JPanel top = new JPanel(new BorderLayout());
-        top.setBackground(Color.WHITE);
+        // ── Image ────────────────────────────────────────────────────
+        JLabel imageLabel = new JLabel();
+        imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        ImageIcon icon = loadTypeImage(room.getType());
+        if (icon != null) {
+            imageLabel.setIcon(icon);
+        } else {
+            imageLabel.setPreferredSize(new Dimension(166, 90));
+            imageLabel.setOpaque(true);
+            imageLabel.setBackground(new Color(240, 244, 255));
+            imageLabel.setText("No image");
+            imageLabel.setForeground(new Color(150, 150, 160));
+        }
+        card.add(imageLabel, BorderLayout.NORTH);
 
-        JLabel roomNo = new JLabel(room.getRoomNumber() != null ? room.getRoomNumber() : "—");
-        roomNo.setFont(new Font("Dialog", Font.BOLD, 13));
+        // ── Info block ─────────
+        JPanel infoBlock = new JPanel();
+        infoBlock.setLayout(new BoxLayout(infoBlock, BoxLayout.Y_AXIS));
+        infoBlock.setBackground(Color.WHITE);
+        infoBlock.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
+
+        // Room number
+        JLabel roomNo = new JLabel("Room " + (room.getRoomNumber() != null ? room.getRoomNumber() : "—"));
+        roomNo.setFont(new Font("Dialog", Font.BOLD, 14));
         roomNo.setForeground(UIConstants.THEME_NAVY);
-
-        String status = resolveStatus(room);
-        JLabel badge = makeStatusBadge(status);
-
-        top.add(roomNo, BorderLayout.WEST);
-        top.add(badge, BorderLayout.EAST);
-        card.add(top, BorderLayout.NORTH);
+        roomNo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Room type
         JLabel type = new JLabel(room.getType() != null ? room.getType() : "");
         type.setFont(UIConstants.FONT_SMALL);
         type.setForeground(new Color(100, 100, 115));
-        card.add(type, BorderLayout.CENTER);
+        type.setAlignmentX(Component.LEFT_ALIGNMENT);
+        type.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
 
-        // Bottom: sub-info
-        JLabel info = new JLabel(getCardSubInfo(room, status));
-        info.setFont(new Font("Dialog", Font.PLAIN, 10));
-        info.setForeground(new Color(140, 140, 155));
-        card.add(info, BorderLayout.SOUTH);
+        // Price per night
+        JLabel price = new JLabel(String.format("$%.2f / night", room.getPricePerNight()));
+        price.setFont(new Font("Dialog", Font.PLAIN, 12));
+        price.setForeground(new Color(60, 60, 70));
+        price.setAlignmentX(Component.LEFT_ALIGNMENT);
+        price.setBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0));
+
+        // Status badge
+        String status = resolveStatus(room);
+        JLabel badge = makeStatusBadge(status);
+        badge.setAlignmentX(Component.LEFT_ALIGNMENT);
+        badge.setMaximumSize(badge.getPreferredSize()); // ← prevents it from stretching full-width
+
+        JPanel badgeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        badgeRow.setBackground(Color.WHITE);
+        badgeRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        badgeRow.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
+        badgeRow.add(badge);
+
+        infoBlock.add(roomNo);
+        infoBlock.add(type);
+        infoBlock.add(price);
+        infoBlock.add(badgeRow);
+        card.add(infoBlock, BorderLayout.CENTER);
 
         // Click to manage
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -278,13 +307,15 @@ public class RoomStatusPanel extends JPanel {
             @Override
             public void mouseEntered(MouseEvent e) {
                 card.setBackground(new Color(248, 249, 253));
-                top.setBackground(new Color(248, 249, 253));
+                infoBlock.setBackground(new Color(248, 249, 253));
+                badgeRow.setBackground(new Color(248, 249, 253));
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 card.setBackground(Color.WHITE);
-                top.setBackground(Color.WHITE);
+                infoBlock.setBackground(Color.WHITE);
+                badgeRow.setBackground(Color.WHITE);
             }
         });
 
@@ -403,7 +434,8 @@ public class RoomStatusPanel extends JPanel {
         form.setBorder(BorderFactory.createEmptyBorder(20, 24, 10, 24));
 
         JTextField roomNoField = new JTextField();
-        JTextField typeField = new JTextField();
+        String[] types = { "Single", "Double", "Suite" };
+        JComboBox<String> typeBox = new JComboBox<>(types);
         JTextField priceField = new JTextField();
         String[] statuses = { "available", "cleaning", "maintenance" };
         JComboBox<String> statusBox = new JComboBox<>(statuses);
@@ -411,7 +443,7 @@ public class RoomStatusPanel extends JPanel {
         form.add(fieldLabel("Room Number"));
         form.add(roomNoField);
         form.add(fieldLabel("Type"));
-        form.add(typeField);
+        form.add(typeBox);
         form.add(fieldLabel("Price/Night"));
         form.add(priceField);
         form.add(fieldLabel("Status"));
@@ -430,12 +462,12 @@ public class RoomStatusPanel extends JPanel {
         addBtn.addActionListener(e -> {
             try {
                 String no = roomNoField.getText().trim();
-                String type = typeField.getText().trim();
+                String type = (String) typeBox.getSelectedItem();
                 double price = Double.parseDouble(priceField.getText().trim());
                 String st = (String) statusBox.getSelectedItem();
 
-                if (no.isEmpty() || type.isEmpty()) {
-                    JOptionPane.showMessageDialog(dialog, "Room number and type are required.");
+                if (no.isEmpty()) {
+                    JOptionPane.showMessageDialog(dialog, "Room number is required.");
                     return;
                 }
 
@@ -485,24 +517,50 @@ public class RoomStatusPanel extends JPanel {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────
+    private ImageIcon loadTypeImage(String type) {
+        if (type == null)
+            return null;
+        String key = type.trim().toLowerCase();
+
+        // Return cached, pre-scaled icon if we've already built it
+        if (imageCache.containsKey(key)) {
+            return imageCache.get(key);
+        }
+
+        String resource = switch (key) {
+            case "single" -> "/hotel/images/resources/hotel1.jpg";
+            case "double" -> "/hotel/images/resources/hotel2.jpg";
+            case "suite" -> "/hotel/images/resources/hotel3.jpg";
+            default -> null;
+        };
+        if (resource == null) {
+            imageCache.put(key, null);
+            return null;
+        }
+
+        ImageIcon result = null;
+        try {
+            java.net.URL url = getClass().getResource(resource);
+            if (url != null) {
+                ImageIcon raw = new ImageIcon(url);
+                if (raw.getIconWidth() > 0) {
+                    Image scaled = raw.getImage().getScaledInstance(166, 90, Image.SCALE_SMOOTH);
+                    result = new ImageIcon(scaled); // cache the already-scaled version
+                }
+            }
+        } catch (Exception ignored) {
+
+        }
+
+        imageCache.put(key, result);
+        return result;
+    }
+
     private String resolveStatus(Room room) {
         String status = room.getStatus();
         if (status != null && !status.isEmpty())
             return status;
         return room.isAvailable() ? "available" : "booked";
-    }
-
-    private String getCardSubInfo(Room room, String status) {
-        switch (status.toLowerCase()) {
-            case "booked":
-                return "Guest assigned";
-            case "cleaning":
-                return "In progress";
-            case "maintenance":
-                return "Under repair";
-            default:
-                return "Ready";
-        }
     }
 
     private void addDetailRow(JPanel panel, String label, Object value) {
