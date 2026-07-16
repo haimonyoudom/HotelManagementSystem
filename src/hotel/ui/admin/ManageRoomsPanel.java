@@ -291,15 +291,14 @@ public class ManageRoomsPanel extends JPanel {
         JTextField roomNumberField = AdminUITheme.textField();
         JComboBox<String> typeBox = AdminUITheme.comboBox("Single", "Double", "Suite");
         JTextField priceField = AdminUITheme.textField();
-        JCheckBox availableBox = new JCheckBox("Available");
-        availableBox.setOpaque(false);
-        availableBox.setSelected(true);
+        // JCheckBox availableBox = new JCheckBox("Available");
+        JComboBox<String> availableBox = AdminUITheme.comboBox("booked", "available","cleaning","maintenance");
 
         if (editing != null) {
             roomNumberField.setText(editing.getRoomNumber());
             typeBox.setSelectedItem(editing.getType());
             priceField.setText(String.valueOf(editing.getPricePerNight()));
-            availableBox.setSelected(editing.isAvailable());
+            availableBox.setSelectedItem(editing.getStatus());
         }
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -336,8 +335,12 @@ public class ManageRoomsPanel extends JPanel {
                 JOptionPane.showMessageDialog(dialog, "Room number and price are required.", "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            if(Float.parseFloat(priceStr) < 0 ){
-                JOptionPane.showMessageDialog(dialog, "Price should be positive. ", "Validation", JOptionPane.WARNING_MESSAGE);
+            if(Float.parseFloat(priceStr) < 45 || Float.parseFloat(priceStr) > 400 ){
+                JOptionPane.showMessageDialog(dialog, "Price should be positive(45-400). ", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            if(Float.parseFloat(number) < 0 ){
+                JOptionPane.showMessageDialog(dialog, "No Room should be positive. ", "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             try {
@@ -346,7 +349,7 @@ public class ManageRoomsPanel extends JPanel {
                 room.setRoomNumber(number);
                 room.setType(String.valueOf(typeBox.getSelectedItem()));
                 room.setPricePerNight(price);
-                room.setAvailable(availableBox.isSelected());
+                room.setStatus(String.valueOf(availableBox.getSelectedItem()));
                 if (addMode) roomDAO.add(room); else roomDAO.update(room);
                 dialog.dispose();
                 reload();

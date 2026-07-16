@@ -16,6 +16,9 @@ import hotel.dao.RoomDAO;
 import hotel.model.Booking;
 import hotel.model.Room;
 import hotel.ui.admin.AdminUITheme;
+import hotel.ui.admin.ManagePaymentsPanel;
+import hotel.ui.admin.ManageRoomsPanel;
+
 
 import java.util.List;
 
@@ -239,7 +242,7 @@ public class StaffDashboard extends JFrame {
         btn.putClientProperty("innerPanel", inner);
 
         // ── Mouse interactions ────────────────────────────────────────
-        btn.addMouseListener(new MouseAdapter() {
+        MouseAdapter navMouseHandler = new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 if (btn != activeSidebarBtn) {
@@ -264,9 +267,19 @@ public class StaffDashboard extends JFrame {
                 activeSidebarBtn = btn;
                 showPanel(label);
             }
-        });
+        };
+        addMouseHandlerToTree(btn, navMouseHandler);
 
         return btn;
+    }
+
+    private void addMouseHandlerToTree(Component component, MouseAdapter handler) {
+        component.addMouseListener(handler);
+        if (component instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                addMouseHandlerToTree(child, handler);
+            }
+        }
     }
 
     private void showPanel(String label) {

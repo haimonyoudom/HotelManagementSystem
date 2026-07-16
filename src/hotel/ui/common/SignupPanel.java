@@ -55,7 +55,7 @@ public class SignupPanel extends JPanel {
         card.add(Box.createVerticalStrut(8));
         card.add(UIHelper.accentBar());
         card.add(Box.createVerticalStrut(14));
-        card.add(UIHelper.fieldLabel("Full Name"));
+        card.add(UIHelper.fieldLabel("Full name"));
         card.add(Box.createVerticalStrut(4));
         card.add(nameField);
         card.add(Box.createVerticalStrut(10));

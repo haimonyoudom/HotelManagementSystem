@@ -121,11 +121,14 @@ final class CustomerData {
         int checkedIn = 0;
         double total = 0;
         for (BookingRow row : rows) {
-            total += row.booking.getTotalPrice();
+            
             String status = normalizeStatus(row.booking.getStatus());
-            if ("Pending".equals(status)) {
+            if("approved".equalsIgnoreCase(status)){
+                total += row.booking.getTotalPrice();
+            }
+            if ("Pending".equalsIgnoreCase(status)) {
                 pending++;
-            } else if ("Checked In".equals(status)) {
+            } else if ("Checked In".equalsIgnoreCase(status)) {
                 checkedIn++;
             }
         }

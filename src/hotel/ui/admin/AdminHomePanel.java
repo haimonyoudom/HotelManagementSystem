@@ -2,11 +2,14 @@ package hotel.ui.admin;
 
 import hotel.dao.BookingDAO;
 import hotel.dao.CustomerDAO;
+import hotel.dao.IDao;
 import hotel.dao.PaymentDAO;
 import hotel.dao.RoomDAO;
 import hotel.dao.StaffDAO;
 import hotel.model.Booking;
+import hotel.model.Customer;
 import hotel.model.Room;
+import hotel.model.Staff;
 import hotel.ui.common.UITheme;
 
 import javax.swing.*;
@@ -14,10 +17,10 @@ import java.awt.*;
 import java.util.List;
 
 public class AdminHomePanel extends JPanel {
-    private final RoomDAO roomDAO = new RoomDAO();
-    private final BookingDAO bookingDAO = new BookingDAO();
-    private final CustomerDAO customerDAO = new CustomerDAO();
-    private final StaffDAO staffDAO = new StaffDAO();
+    private final IDao<Room> roomDAO = new RoomDAO();
+    private final IDao<Booking> bookingDAO = new BookingDAO();
+    private final IDao<Customer> customerDAO = new CustomerDAO();
+    private final IDao<Staff> staffDAO = new StaffDAO();
     private final PaymentDAO paymentDAO = new PaymentDAO();
 
     private final JLabel roomsValue = valueLabel("0");
@@ -58,8 +61,8 @@ public class AdminHomePanel extends JPanel {
         try {
             List<Room> rooms = roomDAO.getAll();
             List<Booking> bookings = bookingDAO.getAll();
-            List<?> customers = customerDAO.getAll();
-            List<?> staff = staffDAO.getAll();
+            List<Customer> customers = customerDAO.getAll();
+            List<Staff> staff = staffDAO.getAll();
             double revenue = paymentDAO.getTotalRevenue();
 
             long availableRooms = rooms.stream().filter(Room::isAvailable).count();

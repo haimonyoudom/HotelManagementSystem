@@ -109,11 +109,11 @@ public class PendingBookingsPanel extends JPanel {
         JPanel content = new JPanel(new BorderLayout());
         content.setBackground(UIConstants.THEME_WHITE_BG);
 
-        String[] columns = { "Booking ID", "Guest Name", "Room Type", "Check-in", "Check-out", "Status", "Actions" };
+        String[] columns = { "Booking ID", "Guest Name","Room Number", "Room Type", "Check-in", "Check-out", "Status", "Actions" };
         tableModel = new DefaultTableModel(new Object[][] {}, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 6; // Only Actions column is editable (for button clicks)
+                return column == 7; // Only Actions column is editable (for button clicks)
             }
         };
 
@@ -143,6 +143,7 @@ public class PendingBookingsPanel extends JPanel {
 
         bookingsTable.getColumn("Booking ID").setPreferredWidth(80);
         bookingsTable.getColumn("Guest Name").setPreferredWidth(120);
+        bookingsTable.getColumn("Room Number").setPreferredWidth(100);
         bookingsTable.getColumn("Room Type").setPreferredWidth(100);
         bookingsTable.getColumn("Check-in").setPreferredWidth(90);
         bookingsTable.getColumn("Check-out").setPreferredWidth(90);
@@ -230,6 +231,7 @@ public class PendingBookingsPanel extends JPanel {
                     continue;
                 String customerName = "N/A";
                 String roomType = "N/A";
+                String roomNumber = "N/A";
 
                 try {
                     Customer customer = customerDAO.getById(booking.getCustomerId());
@@ -237,11 +239,13 @@ public class PendingBookingsPanel extends JPanel {
                         customerName = customer.getName();
                 } catch (SQLException e) {
                     /* keep N/A */ }
-
+            
                 try {
                     Room room = roomDAO.getById(booking.getRoomId());
-                    if (room != null)
+                    if (room != null){
                         roomType = room.getType();
+                        roomNumber = String.valueOf(room.getRoomNumber());
+                    }
                 } catch (SQLException e) {
                     /* keep N/A */ }
 
@@ -259,6 +263,7 @@ public class PendingBookingsPanel extends JPanel {
                 tableModel.addRow(new Object[] {
                         booking.getId(),
                         customerName,
+                        roomNumber,
                         roomType,
 
                         booking.getCheckInDate() != null ? booking.getCheckInDate() : "N/A",
