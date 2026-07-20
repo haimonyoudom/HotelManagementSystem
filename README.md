@@ -6,6 +6,7 @@ A desktop application for managing hotel operations with role-based access contr
 
 This project implements a hotel management system with a graphical user interface built using Java Swing. The application uses SQLite for persistent storage and separates the system into three main roles: **Admin**, **Staff**, and **Customer**. Each role has its own dashboard and permissions for managing hotel data and daily operations.
 
+## link Youtube : https://youtu.be/Fwb66Y68M2w
 ## Features
 
 ### User Management
