@@ -354,7 +354,14 @@ This project is currently provided for academic use. Add a license file if you w
 
 ## Author
 
-**HAI Monyoudom**  
+**HAI Monyoudom**
+
+**Pong MengHeang**
+
+**Hen Chhordavattey**
+
+**Chi LayHorng**
+
 Project: Hotel Management System
 
 ---
